@@ -1,0 +1,24 @@
+# normalize line endings
+* text=auto eol=lf
+
+# Godot plaintext file types
+*.tscn text
+*.tres text
+*.gd text
+*.gdshader text
+*.import text
+
+# Godot binary file types
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ttf binary
+*.otf binary
+*.wav binary
+*.ogg binary
+*.mp3 binary
+*.mp4 binary
+*.glb binary
+*.gltf text
