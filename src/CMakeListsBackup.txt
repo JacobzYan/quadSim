@@ -1,0 +1,74 @@
+
+
+# exe main file
+set(TARGET testExe)
+
+# # Old way to find package, just let CmakeLists in the dependencies folder handle it
+# find_package(Eigen3 5.0.0 REQUIRED NO_MODULE)
+# find_package(ode CONFIG REQUIRED)
+
+
+
+## Helper files
+
+# Collect Helper Sources
+# Adds all *.cc files in these subdirectories - technically bad practice but saves needing to add every file manually
+# file(GLOB_RECURSE SRC_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/*.cc")
+# Also consider using list(FILTER <Variable name> EXCLUDE REGEX "<regex here>")
+file(GLOB_RECURSE ALL_SOURCES_HEADERS CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/run/*.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/run/*.h"
+    )
+
+
+# file(GLOB_RECURSE RUN_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/run/*.cc")
+# file(GLOB_RECURSE SIMULATOR_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/simulator/*.cc")
+
+# # Collect Helper Headers
+# file(GLOB_RECURSE RUN_HEADERS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/run/*.h")
+# file(GLOB_RECURSE SIMULATOR_HEADERS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/simulator/*.h")
+
+
+
+
+# Create Executables
+# add_executable (${TARGET} ${RUN_SOURCES} ${SIMULATOR_SOURCES} ${RUN_HEADERS} ${SIMULATOR_HEADERS})
+add_executable (${TARGET} ${ALL_SOURCES_HEADERS})
+
+# add_executable(${ODETESTTARGET} ${SANDBOX_SOURCES} ${SANDBOX_HEADERS})
+# add_executable (${TARGET} ${SRC_SOURCES} ${RUN_HEADERS} ${SIMULATOR_HEADERS})
+
+
+
+# Add CMakeLists.txt files in subdirectories
+add_subdirectory(dependencies)
+add_subdirectory(simulator) # Files related to simulation of quad
+add_subdirectory(run) # Top level execution scripts
+add_subdirectory(sandbox) # Testers and experiments
+
+# Dependencies
+# location of .dll or .lib files
+target_link_libraries(${TARGET}
+    PRIVATE
+        ode
+        eigen
+)
+
+# My Libraries
+target_link_libraries(${TARGET}
+    PRIVATE
+    simulator
+)
+
+
+
+
+
+# Set output to bin
+set_target_properties(${TARGET}
+    PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin"
+)
+
+
+
