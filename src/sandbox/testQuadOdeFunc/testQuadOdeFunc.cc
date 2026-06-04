@@ -14,8 +14,8 @@ int main()
 
 
     //Set Initial State
-    
-    quadState::stateVector sv;
+    quadState::VectorNd svMemory;
+    quadState::stateVector sv(svMemory.data());
     // sv << 0,0,1.5, 0,0,0, 1,0,0,0,0,-1,0,1,0, 0,0,0, 0,0,0,0;// Rotated start
     sv << 1,1,1.5, 0,0,0, 1,0,0,0,1,0,0,0,1, 0,0,0, 55,45,50,0;// Normal start start
     
@@ -116,7 +116,6 @@ int main()
         double dt = .01;
         int numSubsteps = 10;
         double* currentState_;
-        quad::stateVector currentStateEigen;
 
         double substep_dt = dt / double(numSubsteps);
         int timesteps = totalTime / dt;

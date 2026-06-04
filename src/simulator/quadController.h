@@ -162,11 +162,12 @@ class stateEstimator
         Eigen::MatrixXd sigmaPoints, measSigmaPoints, sigmaPointMatrixH, Q, R, P, Pxz, Pzz, S;
         int sign=-1;
 
-        quadState::stateVector estState_;
+        quadState::VectorNd estStateMemory;
+        quadState::stateVector estState_; // Need to allocate memory for the map
         Eigen::Matrix<double, nStates_, nReserve> sigmaPointMatrixF;
 
     public:
-        stateEstimator(std::shared_ptr<quadParams> paramsPtr): paramsPtr_(paramsPtr) , nh(0)
+        stateEstimator(std::shared_ptr<quadParams> paramsPtr): paramsPtr_(paramsPtr) , nh(0), estState_(estStateMemory.data())
         {
             
         }

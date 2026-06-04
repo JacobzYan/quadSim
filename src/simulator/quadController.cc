@@ -152,8 +152,8 @@ quadState::stateVector stateEstimator::estState (const std::vector<sensorTemplat
     Update state x_k = x_predicted + K(z_k - z_k_predicted)
     IMPORTANT NOTES: Sensors used to advance the dyanmics function (IMU) are not included in the original sigma point set, split one estimator for propogation and one for sensing?
     */
-    
-    return quadState::stateVector();
+    quadState::VectorNd placeholder =quadState::VectorNd::Zero(); // Just here to let the function compile till I get around to fixing it
+    return quadState::stateVector(placeholder.data());
 }
 
 

@@ -103,10 +103,12 @@ class quad : public ode::OdeDoPri54
 {
 
     public:
-        using stateVector = quadState::stateVector;
+        using vectorNd = quadState::VectorNd; // Eigen Double vector with length equal to number of states
+        using stateVector = quadState::stateVector; // Wraps existing allocated memory in an Eigen datatype. Init with: "quadState::VectorNd <memName>; stateVector(VectorNd.data())"
+        
 
     private:
-        quadState state_; // May or may not be useful - maybe update this when we want to read the state?
+        quadState state_; 
         quadParams params_;
         Eigen::Vector3d distVec;
         
@@ -134,25 +136,23 @@ class quad : public ode::OdeDoPri54
             
             return defaultState;
         }
-
-        // Package state
-        quadState dxdtState;
-        Eigen::Map<stateVector> dxdtVec;
+        
 
     public:
         Eigen::Array<double, 4, 1> motorVoltages, cmVec, tauMVec;
         
         
         // Constructor
-        quad(const quadParams & params): //: quad(params, quadState(params)): 
+        quad(const quadParams & params):  
             quad(params, defaultquadState())
             {} // Default starting pose of all 0/identity
 
-        quad(const quadParams & params, const quadState & state0) : 
+        quad(const quadParams & params, const quadState & state0):
+        
             params_(params), 
             ode::OdeDoPri54(state_.nNonPropStates_ + 4), 
-            dxdtState(), // Init dxdtState as empty  
-            dxdtVec(dxdtState.stateAsVec().data()) // Map dxdtVec to the memory in dxdtState
+            state_(sol_)
+
         {
             state_=state0;
             set_sol(state_.stateAsVec().data());
@@ -178,6 +178,8 @@ class quad : public ode::OdeDoPri54
 
         void ode_fun(double* x, double* dxdt) override // Look into optimizations by reducing getter calls
         {
+            
+            quadState dxdtState_(dxdt); // Allocating in every loop as dxdt pointer not known till function called. Investigate replacing this with remapping the pointer in quadState if causing bottleneck
             // std::cout << "Entered ode_fun" << std::endl; //DEBUG
             
             // Package x
@@ -226,18 +228,18 @@ class quad : public ode::OdeDoPri54
 
 
             //  Find derivates of state elements
-            dxdtState.pos() = state.vel();
-            dxdtState.vel() = FgI + state.RBI().transpose()*FVec + distVec - Fd*state.vel().normalized();
-            dxdtState.RBI() = -1 * state.omegaB().asSkewSymmetric() * state.RBI();
-            dxdtState.omegaB() = (NVec - state_.omegaB().asSkewSymmetric()*params_.J()*state_.omegaB());
-            dxdtState.propOmegaB() = ((motorVoltages * cmVec - state_.propOmegaB().array()) / tauMVec).matrix() ;
+            dxdtState_.pos() = state.vel();
+            dxdtState_.vel() = FgI + state.RBI().transpose()*FVec + distVec - Fd*state.vel().normalized();
+            dxdtState_.RBI() = -1 * state.omegaB().asSkewSymmetric() * state.RBI();
+            dxdtState_.omegaB() = (NVec - state_.omegaB().asSkewSymmetric()*params_.J()*state_.omegaB());
+            dxdtState_.propOmegaB() = ((motorVoltages * cmVec - state_.propOmegaB().array()) / tauMVec).matrix() ;
             
             // std::cout << "\tDerivatives calculated" << std::endl; //DEBUG
             
             
 
             // Copy into output
-            std::memcpy(dxdt, dxdtVec.data(), (state_.nNonPropStates_ + 4) * sizeof(double));
+            // std::memcpy(dxdt, dxdtVec.data(), (state_.nNonPropStates_ + 4) * sizeof(double)); // Not needed after changing stateVector to work with the same memory as dxdt
 
             // std::cout << "\tOutput Memory Calculated" << std::endl; // DEBUG
 
