@@ -67,8 +67,6 @@ bool quadParams::readFile(std::string path)
             if(varIndex==7){trim(varValue);} // Name - preserve internal spaces
             else{cutWhitespace(varValue);}
 
-            // std::cout << "Reading line: " << line << " | " << varName << " -- " << varValue << " | End Index: "<< line.size()-delimiterLocation-1 <<std::endl; //DEBUG
-
             // Assign the appropriate value
             switch(varIndex)
             {
@@ -142,8 +140,6 @@ propParams::propParams(const std::string & line)
 
         // Trim all whitespace
         cutWhitespace(varName);
-
-        // std::cout << "\tReading packet: " << packet << " | " << varName << " -- " << varValue << std::endl; //DEBUG
 
         // Ensure there is an equals sign
         if(delimiterLocation==std::string::npos)

@@ -80,14 +80,6 @@ const Eigen::Matrix3d splitMatrix3d(const std::string & line, const char delimit
     std::string data = line;
     
     int nCommmas = replaceDelimiters(data, delimiter);
-    // int nCommmas = 0;
-    // int delimiterIndex = data.find(delimiter);
-    // while(delimiterIndex = data.find(delimiter) != std::string::npos)
-    // {
-    //     delimiterIndex = data.find(delimiter);
-    //     nCommmas += 1;
-    //     data.replace(delimiterIndex, 1, 1, ' ');
-    // }
 
     // Ensure number of commas is correct
     if(nCommmas < 8){std::cout << "INSUFFICIENT VALUES PASSED TO SPLITMATRIX3D: " << line << std::endl; return Eigen::Matrix3d::Zero();}

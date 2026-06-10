@@ -5,7 +5,6 @@
 #include <Eigen/Dense>
 #include <fstream>
 
-// #include "quadState.h"
 
 // Implemented in quadParams.cc
 
