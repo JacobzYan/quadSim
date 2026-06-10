@@ -17,7 +17,8 @@ int main()
     quadState::VectorNd svMemory;
     quadState::stateVector sv(svMemory.data());
     // sv << 0,0,1.5, 0,0,0, 1,0,0,0,0,-1,0,1,0, 0,0,0, 0,0,0,0;// Rotated start
-    sv << 1,1,1.5, 0,0,0, 1,0,0,0,1,0,0,0,1, 0,0,0, 0,0,0,0;// Normal start start
+    sv << 1,1,1.5, 0,0,0, 1,0,0,0,1,0,0,0,1, 0,0,0, 0,0,0,0;// Normal start
+    // sv << 1,1,1.5, 0,0,0, 1,0,0,0,1,0,0,0,1, 0,.5,.5, 0,0,0,0;// Normal start - spinning
     
     quadState state0(sv);
 
@@ -28,8 +29,10 @@ int main()
     // Print out quad params
     Eigen::Vector4d motorVoltages;
     std::cout << std::endl << "motorVoltages Created" << std::endl;
-    // motorVoltages << .1,.2,.1,.2;
-    motorVoltages << .05,.05,.05,.05;
+
+    // motorVoltages << 2.93, 2.93, 2.93, 2.93; // Hover in place
+    motorVoltages << 3.209,2.62,3.209,2.62; // Hover in place, spin
+
     std::cout << std::endl << "motorVoltages values populated" << std::endl;
     defaultQuad.motorVoltages = motorVoltages;
     std::cout << std::endl << "MOTOR VOLTAGES ASSIGNED" << std::endl << std::endl;
@@ -106,10 +109,9 @@ int main()
 
 
         // DEBUG
-        std::string foo;
-        std::cout << "t="<<i*dt<<" - zpos="<<*(currentState_+2)<<" - Press enter to go to next timestep:";
-        // std::cin >> foo;
-        std::getline(std::cin, foo);
+        // std::string foo;
+        // std::cout << "t="<<i*dt<<" - zpos="<<*(currentState_+2)<<" - Press enter to go to next timestep:";
+        // std::getline(std::cin, foo);
 
     }
     

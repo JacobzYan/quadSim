@@ -59,9 +59,13 @@ class quadVisualizer:
         # Create figure, set up paramaters (axes equal, set orientation, view limits, interactive mode on)
         self.fig = plot.figure()
         self.ax = self.fig.add_subplot(projection='3d')
-        self.ax.set_xlim3d([0,self.viewLimits[0]])
-        self.ax.set_ylim3d([0,self.viewLimits[1]])
-        self.ax.set_zlim3d([0,self.viewLimits[2]])
+
+        self.lx = self.viewLimits[0]/2
+        self.ly = self.viewLimits[1]/2
+        self.lz = self.viewLimits[2]/2
+        self.ax.set_xlim3d([-self.lx,self.lx])
+        self.ax.set_ylim3d([-self.ly,self.ly])
+        self.ax.set_zlim3d([-self.lz,self.lz])
         self.ax.set_aspect('equal')
         
         self.ax.set_title(self.simName)
@@ -161,6 +165,9 @@ class quadVisualizer:
     # Update for animation
     def update(self, frame):
             self.updateQuad(self.xcomList[frame], self.RBIList[frame])
+            self.ax.set_xlim3d([-self.lx+self.xcomList[frame][0], self.lx+self.xcomList[frame][0]])
+            self.ax.set_ylim3d([-self.ly+self.xcomList[frame][1], self.ly+self.xcomList[frame][1]])
+            self.ax.set_zlim3d([-self.lz+self.xcomList[frame][2], self.lz+self.xcomList[frame][2]])
             return *self.bodyLinesPlot, *self.axisLines
 
 

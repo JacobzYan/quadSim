@@ -123,7 +123,7 @@ class quad : public ode::OdeDoPri54
         Eigen::Vector3d FgI;
         double epsilon_vI = 1e-3; // This should probably be in a setup/enviornment params
         double Fd; // drag force
-        Eigen::Matrix<double,3,4> FBaseMat, FMat;
+        Eigen::Matrix<double,3,4> FBaseMat, NBaseMat, FMat, NMat;
 
         static inline stateVector defaultStateVector();
         const quadState & defaultquadState()
@@ -169,6 +169,10 @@ class quad : public ode::OdeDoPri54
                 kNVec[i] = params_.props()[i]->kN();
                 omegaRDirVec[i] = params_.props()[i]->omegaRDir();
                 FBaseMat.col(i) = params_.props()[i]->kF() * params_.props()[i]->R().row(2).transpose(); // Premultiply the force axis by the prop kF constant, each col only needs to be multiplied by propOmega^2
+                NBaseMat.col(i) = params_.props()[i]->kN() * params_.props()[i]->R().row(2).transpose()
+                                + (params_.props()[i]->kF() *
+                                params_.props()[i]->location().cross(params_.props()[i]->R().row(2))); // Premultiply force and torque constants.
+                
                 cmVec[i] = params_.props()[i]->cm();
                 tauMVec[i] = params_.props()[i]->tauM();
             }
@@ -180,47 +184,41 @@ class quad : public ode::OdeDoPri54
         {
             
             quadState dxdtState_(dxdt); // Allocating in every loop as dxdt pointer not known till function called. Investigate replacing this with remapping the pointer in quadState if causing bottleneck
-            // std::cout << "Entered ode_fun" << std::endl; //DEBUG
             
             // Package x
-            Eigen::Map<Eigen::Vector<double, state_.nNonPropStates_+4>> xVec(x);
-            quadState state(xVec);
+            // Eigen::Map<Eigen::Vector<double, state_.nNonPropStates_+4>> xVec(x);
+            // quadState state(xVec); 
             
-            
-            // std::cout << "\tstate packaged" << std::endl; //DEBUG
-
-            // Determine Forces, moments
-            // std::cout << "\tCalculation inputs:" << std::endl
-            //           << "\t\tFBaseMat:\n" << FBaseMat << std::endl // Motor axis times prop kF
-            //           << "\t\t state.propOmegaB().array().square().matrix().replicate(3,1):\n" << state.propOmegaB().array().square().replicate(1,3) << std::endl // Matrix of square of prop rates
-            //           << "\t\tstate.propOmegaB().array();:\n" << state.propOmegaB().transpose().array().square() << std::endl
-            //           << "\t\t Mult test: " << FBaseMat.array().rowwise() * state.propOmegaB().array().square().transpose();
-            //           ; // DEBUG
-            // FMat = FBaseMat * state.propOmegaB().array().square().matrix().replicate(1,3);
-            FMat = (FBaseMat.array().rowwise() * state.propOmegaB().array().square().transpose()).matrix();
+  
+    
+            FMat = (FBaseMat.array().rowwise() * state_.propOmegaB().array().square().transpose()).matrix();
+            // FMat = FBaseMat * state_.propOmegaB().array().square().matrix().asDiagonal(); // Compare performance to the above definition
+            NMat = (NBaseMat * state_.propOmegaB().array().square().matrix().asDiagonal()).matrix();
             // std::string foo; // DEBUG
             // std::cin >> foo; // DEBUG    
             
-            // std::cout << "\t\tFMat Calculated" << std::endl; //DEBUG
-            NVal = kNVec.dot((state.propOmegaB().array().square() * omegaRDirVec.array()).matrix()); // Still assuming vertical motors
-            // std::cout << "\t\t NVal Calculated" << std::endl; //DEBUG
+
+            // NVal = kNVec.dot((state_.propOmegaB().array().square() * omegaRDirVec.array()).matrix()); // Still assuming vertical motors
+
             // Assumes all motors are oriented in the B z direction - later implement poseable props, update the matrix in updateParams()
             FVec = FMat.rowwise().sum(); // Sum columns to get the overall force vector wrt body
+            NVec = NMat.rowwise().sum(); // Sum columns to get the overall moment vector wrt body
+            
             // std::cout << "\t\tFMat Summed" << std::endl; //DEBUG
-            NVec << 0,0,NVal; // still assumes motors only point in the +z
+            // NVec << 0,0,NVal; // still assumes motors only point in the +z
             // std::cout << "\t\tNVec Summed" << std::endl; //DEBUG
             // There should be a better way to do this with some kind of matrix operation
-            for(int i=0;i<4;i++)
-            {
-                NVec += params_.props()[i]->location().cross(FMat.col(i));
-            }
+            // for(int i=0;i<4;i++)
+            // {
+            //     NVec += params_.props()[i]->location().cross(FMat.col(i));
+            // }
 
             // std::cout << "\tForces and moments calculated" << std::endl; //DEBUG
 
             // Calculate drag force - set threshold to avoid numerical instability at low speeds
-            if(state.vel().norm() > epsilon_vI)
+            if(state_.vel().norm() > epsilon_vI)
             {
-                Fd = 0.5*params_.Cd()*params_.Ad()*params_.pAir()*abs(state.vel().dot(state.RBI().row(2))*state.vel().norm()*state.vel().norm());
+                Fd = 0.5*params_.Cd()*params_.Ad()*params_.pAir()*abs(state_.vel().dot(state_.RBI().row(2))*state_.vel().norm()*state_.vel().norm());
             }
             else{Fd=0.0;}
 
@@ -228,9 +226,9 @@ class quad : public ode::OdeDoPri54
 
 
             //  Find derivates of state elements
-            dxdtState_.pos() = state.vel();
-            dxdtState_.vel() = FgI + state.RBI().transpose()*FVec + distVec - Fd*state.vel().normalized();
-            dxdtState_.RBI() = -1 * state.omegaB().asSkewSymmetric() * state.RBI();
+            dxdtState_.pos() = state_.vel();
+            dxdtState_.vel() = FgI + state_.RBI().transpose()*FVec + distVec - Fd*state_.vel().normalized();
+            dxdtState_.RBI() = -1 * state_.omegaB().asSkewSymmetric() * state_.RBI();
             dxdtState_.omegaB() = (NVec - state_.omegaB().asSkewSymmetric()*params_.J()*state_.omegaB());
             dxdtState_.propOmegaB() = ((motorVoltages * cmVec - state_.propOmegaB().array()) / tauMVec).matrix() ;
             
@@ -241,16 +239,14 @@ class quad : public ode::OdeDoPri54
             // Copy into output
             // std::memcpy(dxdt, dxdtVec.data(), (state_.nNonPropStates_ + 4) * sizeof(double)); // Not needed after changing stateVector to work with the same memory as dxdt
 
-            // std::cout << "\tOutput Memory Calculated" << std::endl; // DEBUG
 
             // DEBUG
-            
-            std::cout << "Voltage, Ang. Velocity, dxdt:" << std::endl;
-            for(int i=0;i<4;i++)
-            {
-                std::cout << "\t" << motorVoltages(i) << ", " << state_.propOmegaB()(i) << ", " << dxdt[state.nNonPropStates_+i] << std::endl;
-            }
-            std::cout << "\tzPos: " << state_.pos()(2) << std::endl;
+            // std::cout << "Voltage, Ang. Velocity, dxdt:" << std::endl;
+            // for(int i=0;i<4;i++)
+            // {
+            //     std::cout << "\t" << motorVoltages(i) << ", " << state_.propOmegaB()(i) << ", " << dxdt[state.nNonPropStates_+i] << std::endl;
+            // }
+            // std::cout << "\tzPos: " << state_.pos()(2) << std::endl;
             
         }
 
