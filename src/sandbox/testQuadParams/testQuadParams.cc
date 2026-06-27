@@ -24,6 +24,6 @@ int main()
 
     std::cout << "Printing Quad params with 1 indent" << std::endl;
     p.printValues(1);
-    
+
     return 0;
 }

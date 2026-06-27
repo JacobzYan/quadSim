@@ -27,7 +27,7 @@ enum class SensorClass
 
 
 
-
+// Template for future sensors. By default, acts as an omnicient IMU. call getMeas() then access the public member variable "est"
 class sensorTemplate : poseTemplate
 {
     // Define stuff like variance/covariance
@@ -38,17 +38,45 @@ class sensorTemplate : poseTemplate
     // Need to enumerate something for no measurement
     
     private:
-        // std::shared_ptr<quadParams> paramsPtr_;
-    
-    
+        inline static const quadState::VectorNd nullVec = quadState::VectorNd::Constant(std::numeric_limits<double>::quiet_NaN());
     public:
-        sensorTemplate(){}
         quadState est;
-        // omniscientSensor for testing
-        quadState estimatePosition(const quadState & state, const enviornment & env) 
+        std::string type = "Default";
+        std::string name = "Default";
+
+        // Constructors
+        sensorTemplate(){est.stateAsVec();}
+        
+        // default sensor is omnicient
+        void getMeas(quadState * qState, const enviornment env)
         {
-            est.pos()=state.pos();
-            est.RBI()=state.RBI();
-            return est;
+            est.pos(qState->pos());
+            est.vel(qState->vel());
+            est.omegaB(qState->omegaB());
         }
+
+        // Misc
+        void printValues() const;
+        void printValues(int nTabs) const;
+
+};
+
+
+
+class IMUSensor : sensorTemplate
+{
+    private:
+
+    public:
+        IMUSensor(){}
+        IMUSensor(const std::string & line);
+};
+
+class cameraSensor : sensorTemplate
+{
+    private:
+
+    public:
+        cameraSensor(){}
+        cameraSensor(const std::string & line);
 };

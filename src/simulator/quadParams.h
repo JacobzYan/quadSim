@@ -27,7 +27,7 @@ private:
     int varIndex;
 
     // Statics
-    inline static const std::vector<std::string> varNames = {"g", "pAir", "m", "Cd", "Ad", "J", "xCOM", "prop", "name"}; // List of variable names to recognize -CHANGE THIS TO ENUM IN THE FUTURE
+    inline static const std::vector<std::string> varNames = {"g", "pAir", "m", "Cd", "Ad", "J", "xCOM", "prop", "name", "sensor"}; // List of variable names to recognize -CHANGE THIS TO ENUM IN THE FUTURE
     inline static const int nVars = varNames.size();
     
     // Settings
@@ -51,6 +51,8 @@ private:
     
     // Sensor Params
     std::vector<const sensorTemplate*> sensors_; // Vector of pointers to sensor objects
+    const inline static std::vector<std::string> sensorTypes = {"Default", "IMU", "Camera"}; // Types of sensors used for config file reading init
+
 
     // Controller Params
     // Implement pointer for quadController
@@ -123,6 +125,7 @@ public:
         else{return false;}
     } 
     void addProp(const propParams* prop_ptr){props_.push_back(prop_ptr);} // Add a prop to the vector
+    void addSensor(std::string line); // Implemented in quadParams.cc
 
     // config initialization functions
     bool readFile(std::string path);

@@ -63,10 +63,10 @@ class droneState
         // Setters
         void pos(const Eigen::Vector3d & pos){stateAsVec_.segment(0,3)=pos;}
         void vel(const Eigen::Vector3d & vel){stateAsVec_.segment(3,3)=vel;}
-        void RBI(Eigen::Matrix3d & RBI){stateAsVec_.segment(6,9)=RBI.reshaped(9,1);}
-        void omegaB(Eigen::Vector3d & omegaB){stateAsVec_.segment(15,3)=omegaB;}
-        void propOmegaB(propVector & propOmegaB){stateAsVec_.segment(18,nProps)=propOmegaB;}
-        void stateAsVec(stateVector & stateAsVec){stateAsVec_=stateAsVec;}
+        void RBI(const Eigen::Matrix3d & RBI){stateAsVec_.segment(6,9)=RBI.reshaped(9,1);}
+        void omegaB(const Eigen::Vector3d & omegaB){stateAsVec_.segment(15,3)=omegaB;}
+        void propOmegaB(const propVector & propOmegaB){stateAsVec_.segment(18,nProps)=propOmegaB;}
+        void stateAsVec(const stateVector & stateAsVec){stateAsVec_=stateAsVec;}
 
         // Stores the quad state as a vector with the following approach:
         // Indices: [0,2]   = rI:         3x1 Position vector of B expressed in I [m]

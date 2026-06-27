@@ -66,6 +66,16 @@ class quad : public ode::OdeDoPri54
             updateParams();
         } // Constructor with given initial pose
 
+        // Take measurements
+        
+        
+        
+        // Decides on a control output based on the enviornment and goal - no return
+
+
+        // Decides on a control output based on the enviornment and goal - returns chosen motor voltages
+
+
 
         // Updates precalculated matrices used to determine net forces, torques, and motor speeds
         void updateParams()

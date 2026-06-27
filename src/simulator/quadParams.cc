@@ -9,6 +9,7 @@
 
 #include "quadParams.h"
 #include "poseModules.h"
+#include "sensors.h"
 #include "utils.h"
 
 
@@ -79,12 +80,76 @@ bool quadParams::readFile(std::string path)
                 case 6: xCOM(splitVector3d(varValue, ',')); break;
                 case 7: addProp(new propParams(varValue)); break;
                 case 8: name(varValue); break;
+                case 9: addSensor(varValue); break;
                 default: std::cout << "Could not read line - variable name not recognized: " << line << std::endl;
             }
         }
         
         return true;
     }
+
+// 
+void quadParams::addSensor(std::string line)
+{
+    // Temp helper variables
+    std::string varName;
+    std::string varValue; 
+    int delimiterLocation;
+    int varTypeIndex=-1;
+    bool typeSet = false;
+    // Process line
+    std::string processingLine = line;
+    cutWhitespace(processingLine);
+
+    // Seperate out sensor parameters with semicolon delimeters
+    replaceDelimiters(processingLine,';');
+    std::istringstream iss(processingLine);
+
+    std::string packet;
+    while(iss >> packet)
+    {
+        // Split line by semicolon
+        delimiterLocation = packet.find("=");
+        varName = packet.substr(0,delimiterLocation);
+        varValue = packet.substr(delimiterLocation+1, packet.size()-delimiterLocation-1);
+
+        // Trim all whitespace
+        cutWhitespace(varName);
+
+        // Ensure there is an equals sign
+        if(delimiterLocation==std::string::npos)
+        {
+            std::cout << "THIS PACKET CONTAINS NO EQUALS SIGN DELIMITER:" << std::endl << packet << std::endl;
+            continue;
+        }
+
+        // Check if this packet has sensor type listed
+        if(varName == "Type")
+        {
+            for(int i=0;i<sensorTypes.size();i++)
+                if(sensorTypes[i] == varValue)
+                {
+                    varTypeIndex = i;
+                    break;
+                } 
+        }
+
+        // Send to the appropriate constructor
+        switch(varTypeIndex)
+        {
+            case 0: // Default
+                sensors_.push_back(new sensorTemplate());
+                break;
+            case 1: // IMU
+                break;
+            case 2: // Camera
+                break;
+            default:
+                break;
+        } 
+    }
+}
+
 
 // Print Functions
 void quadParams::printValues() const {printValues(0);} // Default prints with no tabs
@@ -110,8 +175,35 @@ void quadParams::printValues(int nTabs) const
     {
         prop->printValues(nTabs+1);
     }
+    std::cout << "PRINTING SENSOR PARAMS NOW"<< std::endl; //Debug
+    std::cout << "len of sensors: "<< sensors_.size() << std::endl; //Debug
+    for(const sensorTemplate * sensor : sensors_)
+    {
+        sensor->printValues(nTabs+1);
+    }
+    std::cout << "DONE PRINTING SENSOR PARAMS NOW" << std::endl; //Debug
 }
 
+void sensorTemplate::printValues() const {printValues(0);}
+void sensorTemplate::printValues(int nTabs) const
+{
+    using std::endl;
+    std::string startingTabs = repeatStr("\t", nTabs);
+    const std::string matLineStart = "\n\t\t"+startingTabs;
+    Eigen::IOFormat matrixFormat{Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", "\n\t\t"+startingTabs};
+
+    std::cout
+    << startingTabs << name << " Parameters:" << endl
+    << startingTabs << "\tType: " << type << endl
+    // << startingTabs << "\tR: " << matLineStart << R().format(matrixFormat) << endl
+    // << startingTabs << "\tkMotor: " << kMotor() << endl
+    // << startingTabs << "\tkF: " << kF() << endl
+    // << startingTabs << "\tkN: "  << kN() << endl
+    // << startingTabs << "\tdirection: "  << omegaRDir() << endl
+    // << startingTabs << "\tcm: "  << cm() << endl
+    // << startingTabs << "\ttauM: "  << tauM() << endl
+    ;
+}
 
 // ===== propParams Implementations =====
 propParams::propParams(const std::string & line)
@@ -133,7 +225,7 @@ propParams::propParams(const std::string & line)
     std::string packet;
     while(iss >> packet)
     {
-        // Split line by semicolon
+        // Seperate out prop parameters
         delimiterLocation = packet.find("=");
         varName = packet.substr(0,delimiterLocation);
         varValue = packet.substr(delimiterLocation+1, packet.size()-delimiterLocation-1);
@@ -220,3 +312,5 @@ void propParams::printValues(int nTabs) const
     << startingTabs << "\ttauM: "  << tauM() << endl
     ;
 }
+
+

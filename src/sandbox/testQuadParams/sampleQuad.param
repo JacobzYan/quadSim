@@ -7,3 +7,5 @@ kMotor = 4
 CdProp = 1    .5
 
 ClProp       =          7             
+
+sensor= TESTSENSOR;
