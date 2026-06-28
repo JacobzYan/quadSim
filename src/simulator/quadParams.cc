@@ -116,12 +116,12 @@ void quadParams::addSensor(std::string line)
         // Trim all whitespace
         cutWhitespace(varName);
 
-        // Ensure there is an equals sign
-        if(delimiterLocation==std::string::npos)
-        {
-            std::cout << "THIS PACKET CONTAINS NO EQUALS SIGN DELIMITER:" << std::endl << packet << std::endl;
-            continue;
-        }
+        // // Ensure there is an equals sign
+        // if(delimiterLocation==std::string::npos)
+        // {
+        //     std::cout << "THIS PACKET CONTAINS NO EQUALS SIGN DELIMITER:" << std::endl << packet << std::endl;
+        //     continue;
+        // }
 
         // Check if this packet has sensor type listed
         if(varName == "Type")
@@ -133,21 +133,22 @@ void quadParams::addSensor(std::string line)
                     break;
                 } 
         }
-
-        // Send to the appropriate constructor
-        switch(varTypeIndex)
-        {
-            case 0: // Default
-                sensors_.push_back(new sensorTemplate());
-                break;
-            case 1: // IMU
-                break;
-            case 2: // Camera
-                break;
-            default:
-                break;
-        } 
     }
+
+    // Send to the appropriate constructor
+    switch(varTypeIndex)
+    {
+        case 0: // Default
+            sensors_.push_back(new sensorTemplate());
+            break;
+        case 1: // IMU
+            break;
+        case 2: // Camera
+            break;
+        default:
+            break;
+    } 
+    
 }
 
 

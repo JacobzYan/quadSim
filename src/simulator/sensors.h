@@ -48,7 +48,7 @@ class sensorTemplate : poseTemplate
         sensorTemplate(){est.stateAsVec();}
         
         // default sensor is omnicient
-        void getMeas(quadState * qState, const enviornment env)
+        void getMeas(quadState * qState, const enviornment env) // CHANGE THIS, MAKE GETTERS CONST THEN MAKE qState TAKE CONST
         {
             est.pos(qState->pos());
             est.vel(qState->vel());

@@ -31,7 +31,8 @@ int main()
     std::cout << std::endl << "motorVoltages Created" << std::endl;
 
     // motorVoltages << 2.93, 2.93, 2.93, 2.93; // Hover in place
-    motorVoltages << 3.209,2.62,3.209,2.62; // Hover in place, spin
+    // motorVoltages << 3.209,2.62,3.209,2.62; // Hover in place, spin
+    motorVoltages << 3.209, 2.62, 3, 2.62; // Unstable, crashes
 
     std::cout << std::endl << "motorVoltages values populated" << std::endl;
     defaultQuad.motorVoltages = motorVoltages;
