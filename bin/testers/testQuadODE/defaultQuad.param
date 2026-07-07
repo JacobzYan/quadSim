@@ -1,0 +1,29 @@
+# Default Params
+# Units are in SI unless otherwise stated
+# matrices are filled row by row ex: M = 1,2,3,4,5,6,7,8,9 leads to
+# [1,4,7]
+# [2,5,8]
+# [3,6,9]
+
+
+name = DefaultQuad
+m = .78
+
+# Drag only accounted for in top plane of the quad
+Cd = 0.3
+Ad = 0.01
+xCOM = 0,0,0
+J = 0.001756, 0, 0, 0, 0.0035723, 0, 0, 0, 0. 47134
+
+
+# Props proceed CCW from NE. Using props out rotation pattern
+# Quad Facing Forward in X
+# kF: Force Coeff [N/rad/s]
+# kN: Torque Coeff [Nm/rad/s]
+# direction: CCW = 1, CW = -1
+# tauM: Motor time constant 
+# cm: Motor constant [rad/s/V]
+prop= name = NE ; location =  .21, -.21, 0 ; R = 1,0,0,0,1,0,0,0,1 ; kF = 0.0000055717 ; kN = 0.00000013678 ; direction = -1 ; tauM = .05; cm = 200
+prop= name = NW ; location =  .21,  .21, 0 ; R = 1,0,0,0,1,0,0,0,1 ; kF = 0.0000055717 ; kN = 0.00000013678 ; direction =  1 ; tauM = .05; cm = 200
+prop= name = SE ; location = -.21,  .21, 0 ; R = 1,0,0,0,1,0,0,0,1 ; kF = 0.0000055717 ; kN = 0.00000013678 ; direction = -1 ; tauM = .05; cm = 200
+prop= name = SW ; location = -.21, -.21, 0 ; R = 1,0,0,0,1,0,0,0,1 ; kF = 0.0000055717 ; kN = 0.00000013678 ; direction =  1 ; tauM = .05; cm = 200

@@ -1,2 +1,2 @@
 
-source ../../venvs/quadSimVenv/bin/activate
+source ../quadSimPythonVenv/QSVenv/bin/activate

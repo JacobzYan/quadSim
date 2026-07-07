@@ -1,0 +1,14 @@
+# Params only for testing quadParams initialization
+name =        Test Quad
+m=.4
+Cd =    1.   5
+Ad= 4
+J = 1,2, 3,   4. 5 ,6 ,78,1,-1,3
+xCOM = 0,0,0.2
+
+
+
+prop= name=Prop 1; location = 1,2,5;R = 1,2, 3,   4. 5 ,6 ,78,1,-1,3;kMotor = 4;kF = 1    .5;     kN       =          7   ;omegaRDir=1; cm=4 ; tauM=3          
+prop = name=Prop 2; location = -4,5,5;R = 1,1, 1,   4. 5 ,6 ,78,1,-1,3;kMotor = -4;kF = 10     .5; kN      =          700;omegaRDir=-1; cm=1;tauM=5
+
+sensor= Type=Default;Name = TESTSENSOR

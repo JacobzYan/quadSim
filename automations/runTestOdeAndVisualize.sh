@@ -27,7 +27,7 @@ cd ..
 
 # Visualize in python
 echo visualizing...
-source quadSimVenv/bin/activate
+source quadSimPythonVenv/QSVenv/bin/activate
 
 
 python3 automations/helpers/visualizeOdeTester.py bin/output.csv

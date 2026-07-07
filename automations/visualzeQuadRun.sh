@@ -33,7 +33,7 @@ cd ../../..
 
 # Visualize in python
 echo visualizing...
-source ../venvs/quadSimVenv/bin/activate
+source quadSimPythonVenv/QSVenv/bin/activate
 
 cd automations
 python3 helpers/visualizeQuad.py outputs/testSimDefaultQuad.param outputs/testSimOutputData.csv outputs/testSimVisual.mp4
