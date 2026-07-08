@@ -42,7 +42,101 @@ struct trajectory
 
 
 //Controller Submodules
-class trajectoryController
+// Controller templates
+class trajectoryControllerTemplate
+{
+    private:
+        // Controller variables - pointers to allow easy modification of change in gains to flow down
+        double m_;
+        double g_;
+        std::shared_ptr<quadParams> paramsPtr_;
+
+        // Helper Variables
+        Eigen::Vector3d gVector;
+        Eigen::Vector3d FDesVec;
+        trajectoryControllerPacket response_;
+        
+
+    public:
+        // Explicitly set kp and kd
+        trajectoryControllerTemplate(
+                        const double m,
+                        const double g=9.81
+                        )
+                        : g_(g), m_(m) {gVector << 0,0,m*g;}
+
+        // Getters
+
+        // Setters
+        void m(const double m) {m_=m; gVector[2]=m_*g_;}
+        void g(const double g) {g_=g; gVector[2]=g_*g_;}
+        void mg(const double m, const double g) {m_=m; g_=g; gVector[2]=m_*g_;}
+
+    // Calculate control law response
+    const trajectoryControllerPacket response(
+                                    const Eigen::Vector3d & x,
+                                    const Eigen::Vector3d & xDot, 
+                                    const Eigen::Vector3d & xDes, 
+                                    const Eigen::Matrix3d & RBI,
+                                    const Eigen::Vector3d & xDotDes = Eigen::Vector3d::Zero(),                                       
+                                    const Eigen::Vector3d & xDotDotDes = Eigen::Vector3d::Zero()
+                                    );
+};
+class attitudeControllerTemplate
+{
+        private:
+        // Controller variables - pointers to allow easy modification of change in gains to flow down
+        double m_;
+        double g_;
+        std::shared_ptr<quadParams> paramsPtr_;
+
+        // Helper Variables
+        Eigen::Vector3d FIDes;
+        Eigen::Vector3d FFGravity;
+        Eigen::Vector3d response_ = Eigen::Vector3d::Zero();
+
+    public:
+    // Explicitly set kp and kd
+        attitudeControllerTemplate(
+                        const double m,
+                        const double g=9.81
+                        )
+                        : g_(g), m_(m) {}
+
+        // Calculate control law response
+        const Eigen::Vector3d & response(
+                                        const Eigen::Matrix3d & RBI,
+                                        const Eigen::Vector3d & xDes, 
+                                        const Eigen::Vector3d & zDes, 
+                                        const Eigen::Vector3d & omegaB,
+                                        const Eigen::Matrix3d & JB
+                                        );
+};
+class stateEstimatorTemplate
+{
+    private:
+        
+        // Reference Info storage
+        std::shared_ptr<quadParams> paramsPtr_;
+        std::shared_ptr<enviornment> env_Ptr;
+        
+        // Output
+        quadState::stateVector estState_; // Need to allocate memory for the map
+
+    public:
+        
+        // Constructors
+        stateEstimatorTemplate(std::shared_ptr<quadParams> paramsPtr): paramsPtr_(paramsPtr)
+        {
+            
+        }
+
+        // Estimate the state given the sensors and their respective readings - possibly make this just pull from quadParams?
+        quadState::stateVector estState (const std::vector<sensorTemplate*> measSensorPointers, std::vector<std::vector<double>> sensorReadings);
+};
+
+// Trajectory Controllers
+class PDTrajectoryController : trajectoryControllerTemplate
 {
     private:
         // Controller variables - pointers to allow easy modification of change in gains to flow down
@@ -60,14 +154,14 @@ class trajectoryController
 
     public:
         // Explicitly set kp and kd
-        trajectoryController(
+        PDTrajectoryController(
                         std::shared_ptr<double> kpPtr, 
                         std::shared_ptr<double> kdPtr,
                         const double m,
                         const double g=9.81
                         
                         )
-                        : kpPtr_(kpPtr), kdPtr_(kdPtr), g_(g), m_(m) {gVector << 0,0,m*g; normalizeFDesZ << 0,0,1;}
+                        : trajectoryControllerTemplate(m, g), kpPtr_(kpPtr), kdPtr_(kdPtr), g_(g), m_(m) {gVector << 0,0,m*g; normalizeFDesZ << 0,0,1;}
 
         // Getters
         const double kp() const {return * kpPtr_ ;}
@@ -90,7 +184,9 @@ class trajectoryController
                                     const Eigen::Vector3d & xDotDotDes = Eigen::Vector3d::Zero()
                                     );
 };
-class attitudeController
+
+// Attitude Controllers
+class PDAttitudeController : attitudeControllerTemplate
 {
         private:
         // Controller variables - pointers to allow easy modification of change in gains to flow down
@@ -112,13 +208,13 @@ class attitudeController
 
     public:
     // Explicitly set kp and kd
-        attitudeController(
+        PDAttitudeController(
                         std::shared_ptr<Eigen::Vector3d> kpPtr, 
                         std::shared_ptr<Eigen::Vector3d> kdPtr,
                         const double m,
                         const double g=9.81
                         )
-                        : kpPtr_(kpPtr), kdPtr_(kdPtr), g_(g), m_(m) {AAErr << 0,0,0;}
+                        : attitudeControllerTemplate(m, g), kpPtr_(kpPtr), kdPtr_(kdPtr), g_(g), m_(m) {AAErr << 0,0,0;}
 
         // Getters
         const Eigen::Vector3d kp() const {return * kpPtr_ ;}
@@ -137,15 +233,14 @@ class attitudeController
                                         const Eigen::Matrix3d & JB
                                         );
 };
-class stateEstimator
+
+// State Estimators
+class ukfEstimator : stateEstimatorTemplate
 {
     private:
         // Sigma Point Spacing Parameters
         int nStates=nStates_, nProp, nCorrect, nh, nzMeas, nzDyn; //nStates = number of state variables, nProp = number of measurements that affect propogation, nCorrect = number of measurements that are used to correct the current state 
         double alpha, beta, mu, lambda;
-
-        std::shared_ptr<quadParams> paramsPtr_;
-        std::shared_ptr<enviornment> env_Ptr;
         
         const static int nf = nStates_ + nDynSensor; // n states in the dyanmics function
         const static int nSigmaf = 2*nf+1;
@@ -167,7 +262,7 @@ class stateEstimator
         Eigen::Matrix<double, nStates_, nReserve> sigmaPointMatrixF;
 
     public:
-        stateEstimator(std::shared_ptr<quadParams> paramsPtr): paramsPtr_(paramsPtr) , nh(0), estState_(estStateMemory.data())
+        ukfEstimator(std::shared_ptr<quadParams> paramsPtr): stateEstimatorTemplate(paramsPtr), nh(0), estState_(estStateMemory.data())
         {
             
         }
@@ -176,10 +271,25 @@ class stateEstimator
         const std::vector<std::vector<double>> hMeas(const std::vector<sensorTemplate*>, const quadState::stateVector & state);
         const quadState::stateVector fDyn(const Eigen::Vector<double, 6> & IMUReading, const quadState::stateVector & state);
     
-
 };
 
+class naiveEstimator : stateEstimatorTemplate // WIP
+{
+    private:
+        std::shared_ptr<sensorTemplate> IMUPtr;
 
+    public:
+        naiveEstimator(std::shared_ptr<quadParams> paramsPtr): stateEstimatorTemplate(paramsPtr)
+        {
+            for(int i=0;i<paramsPtr->sensors().size();i++)
+            {
+                if(paramsPtr->sensors()(i)->type() == "IMU") // THIS IS JUST PSEUDOCODE
+                {
+                    IMUPtr = paramsPtr->sensors()(i); // RESOLVE THIS TYPE ISSUE
+                }
+            } 
+        }
+};
 
 
 
@@ -187,15 +297,18 @@ class quadController
 {
     private:
         // stateEstimator estimator_;
-        trajectoryController trajCon_;
-        attitudeController attCon_;
+        std::shared_ptr<trajectoryControllerTemplate> trajCon_;
+        std::shared_ptr<attitudeControllerTemplate> attCon_;
         std::vector<std::shared_ptr<sensorTemplate>> sensors_;
         std::shared_ptr<quadParams> paramsPtr_;
         public:
-        quadController(trajectoryController trajCon, attitudeController attCon)
+        quadController(std::shared_ptr<trajectoryControllerTemplate> trajCon, std::shared_ptr<attitudeControllerTemplate> attCon)
         : trajCon_(trajCon), attCon_(attCon){}
 
         // 
         controllerDemands getDemands(quadState state, trajectory traj);
         Eigen::VectorXd getVoltages(quadState state, trajectory traj);
 };
+
+
+

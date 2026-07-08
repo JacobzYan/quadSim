@@ -105,6 +105,7 @@ public:
     const Eigen::Matrix3d& J()    const {return J_;} // [kg m^2] Inertia matrix of the quad at the center of mass
     const Eigen::Vector3d& xCOM() const {return xCOM_;} // [m] Location of the center of mass relative to the origin
     const std::vector< const propParams*>& props() const {return props_;} // Returns reference to vector of pointers to prop objects
+    const std::vector<const sensorTemplate*>& sensors() const {return sensors_;} // Returns referense to sensors
     const std::string & name() const {return name_;}
 
     // Setters
