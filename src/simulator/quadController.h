@@ -121,12 +121,13 @@ class stateEstimatorTemplate
         std::shared_ptr<enviornment> env_Ptr;
         
         // Output
-        quadState::stateVector estState_; // Need to allocate memory for the map
+        quadState::VectorNd estStateMemory = quadState::VectorNd::Zero(); // Need to allocate memory for the map
+        quadState::stateVector estState_; 
 
     public:
         
         // Constructors
-        stateEstimatorTemplate(std::shared_ptr<quadParams> paramsPtr): paramsPtr_(paramsPtr)
+        stateEstimatorTemplate(std::shared_ptr<quadParams> paramsPtr): paramsPtr_(paramsPtr), estState_(estStateMemory.data())
         {
             
         }

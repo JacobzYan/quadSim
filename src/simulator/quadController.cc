@@ -27,7 +27,7 @@
 
 
 
-const trajectoryControllerPacket trajectoryController::response(
+const trajectoryControllerPacket PDTrajectoryController::response(
                                     const Eigen::Vector3d & x,
                                     const Eigen::Vector3d & xDot, 
                                     const Eigen::Vector3d & xDes, 
@@ -47,7 +47,7 @@ const trajectoryControllerPacket trajectoryController::response(
 
 
 
-const Eigen::Vector3d & attitudeController::response(
+const Eigen::Vector3d & PDAttitudeController::response(
                                         const Eigen::Matrix3d & RBI,
                                         const Eigen::Vector3d & xDes, 
                                         const Eigen::Vector3d & zDes, 
@@ -79,7 +79,7 @@ const Eigen::Vector3d & attitudeController::response(
 
 
 // Assume that the fDynamics propogation sensor is 
-quadState::stateVector stateEstimator::estState (const std::vector<sensorTemplate*> measSensorPointers, std::vector<std::vector<double>> sensorReadings)
+quadState::stateVector ukfEstimator::estState (const std::vector<sensorTemplate*> measSensorPointers, std::vector<std::vector<double>> sensorReadings)
 {
     // Determine size of state variables, measurements, Propogation sensors
     // nf n states in the dyanmics function (constant, declared in header)

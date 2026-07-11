@@ -3,6 +3,7 @@ build/
 reference/
 .bkp
 quadSimPythonVenv/QSVenv/
+.vscode
 
 # Keep test parameter files that exist in bin - later should update this so config files live in automations or somewhere else
 # ignore files with no extension(don't track binaries, track config files). !bin/**/ is needed so that git will actually look inside /bin   
