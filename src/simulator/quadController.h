@@ -134,6 +134,27 @@ class stateEstimatorTemplate
         // Estimate the state given the sensors and their respective readings - possibly make this just pull from quadParams?
         quadState::stateVector estState (const std::vector<sensorTemplate*> measSensorPointers, std::vector<std::vector<double>> sensorReadings);
 };
+class quadControllerTemplate
+{
+    private:
+        // stateEstimator estimator_;
+        std::shared_ptr<trajectoryControllerTemplate> trajCon_;
+        std::shared_ptr<attitudeControllerTemplate> attCon_;
+        std::vector<std::shared_ptr<sensorTemplate>> sensors_;
+        std::shared_ptr<quadParams> paramsPtr_;
+        public:
+        quadControllerTemplate
+        (
+            std::shared_ptr<trajectoryControllerTemplate> trajCon, 
+            std::shared_ptr<attitudeControllerTemplate> attCon
+        ):
+            trajCon_(trajCon), 
+            attCon_(attCon){}
+
+        // 
+        controllerDemands getDemands(quadState state, trajectory traj);
+        Eigen::VectorXd getVoltages(quadState state, trajectory traj);
+};
 
 // Trajectory Controllers
 class PDTrajectoryController : trajectoryControllerTemplate
@@ -293,22 +314,17 @@ class naiveEstimator : stateEstimatorTemplate // WIP
 
 
 
-class quadController
+
+
+class naievePDController : quadControllerTemplate
 {
-    private:
-        // stateEstimator estimator_;
-        std::shared_ptr<trajectoryControllerTemplate> trajCon_;
-        std::shared_ptr<attitudeControllerTemplate> attCon_;
-        std::vector<std::shared_ptr<sensorTemplate>> sensors_;
-        std::shared_ptr<quadParams> paramsPtr_;
-        public:
-        quadController(std::shared_ptr<trajectoryControllerTemplate> trajCon, std::shared_ptr<attitudeControllerTemplate> attCon)
-        : trajCon_(trajCon), attCon_(attCon){}
+    PDTrajectoryController trajCtrl_();
+    PDAttitudeController attCtrl_(); 
 
-        // 
-        controllerDemands getDemands(quadState state, trajectory traj);
-        Eigen::VectorXd getVoltages(quadState state, trajectory traj);
+    std::make_shared<PDTrajectoryController> trajCtrlPtr(trajCtrl_);
+    std::make_shared<PDAttitudeController> attCtrlPtr(attCtrl_);
+    naievePDController(): 
+        quadControllerTemplate(trajCtrlPtr,attCtrlPtr)
+    {}
 };
-
-
 

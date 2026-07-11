@@ -25,6 +25,8 @@ class quad : public ode::OdeDoPri54
     public:
         using vectorNd = quadState::VectorNd; // Eigen Double vector with length equal to number of states
         using stateVector = quadState::stateVector; // Wraps existing allocated memory in an Eigen datatype. Init with: "quadState::VectorNd <memName>; stateVector(VectorNd.data())"
+        double dt_=.005;
+        int _nSubsteps = 10;
         
     private:
         quadState state_; 
@@ -126,6 +128,12 @@ class quad : public ode::OdeDoPri54
             dxdtState_.propOmegaB() = ((motorVoltages * cmVec - state_.propOmegaB().array()) / tauMVec).matrix() ;    
         }
 
+        // Simulates a real life timestep of estimation and control
+        void simFlight()
+        {
+            // Get sensor measurements
+            // params_.
+        }
 };
 
 // Simulates the behavior of some number of drones in an enviornment - unfinished

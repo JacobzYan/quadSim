@@ -10,7 +10,7 @@
 #include <memory>
 
 #include "poseModules.h"
-
+#include "quadController.h"
 // Forward declare
 class sensorTemplate;
 
@@ -48,6 +48,7 @@ private:
     // Quad Controller Params
     std::shared_ptr<double> gPtr_ = std::make_shared<double>(g_);
     std::shared_ptr<double> mPtr_ = std::make_shared<double>(m_);
+    std::shared_ptr<quadControllerTemplate> controller;
     
     // Sensor Params
     std::vector<const sensorTemplate*> sensors_; // Vector of pointers to sensor objects
