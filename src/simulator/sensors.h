@@ -40,12 +40,13 @@ class sensorTemplate : poseTemplate
     private:
         inline static const quadState::VectorNd nullVec = quadState::VectorNd::Constant(std::numeric_limits<double>::quiet_NaN());
     public:
+        quadState::VectorNd estMemory = quadState::VectorNd::Zero();
         quadState est;
         std::string type = "Default";
         std::string name = "Default";
 
         // Constructors
-        sensorTemplate(){est.stateAsVec();}
+        sensorTemplate(): est(estMemory.data()){}
         
         // default sensor is omnicient
         void getMeas(quadState * qState, const enviornment env) // CHANGE THIS, MAKE GETTERS CONST THEN MAKE qState TAKE CONST

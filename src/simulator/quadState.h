@@ -1,6 +1,5 @@
 
 #pragma once
-#include "quadParams.h"
 
 
 
@@ -39,7 +38,6 @@ class droneState
         droneState(Eigen::Map<stateVector> & stateMap) : stateAsVec_(stateMap.data()){} // Takes an externally allocated double array wrapped with Eigen::Map and use that memory
         droneState(double* state) : stateAsVec_(state){} // Takes an externally allocated double array and use that memory - NO SIZE CHECK
         droneState(
-                const quadParams & params, 
                 const Eigen::Vector3d & pos = Eigen::Vector3d::Zero(), 
                 const Eigen::Matrix3d & RBI = Eigen::Matrix3d::Identity(),
                 const Eigen::Vector<double, nProps> & propOmegaB = Eigen::Vector<double, nProps>::Zero()

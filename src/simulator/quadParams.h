@@ -10,10 +10,10 @@
 #include <memory>
 
 #include "poseModules.h"
-#include "quadController.h"
-// Forward declare
-class sensorTemplate;
 
+// Forward declare to avoid circular includes - quadParams just holds these in order to have a single source to reference from
+class sensorTemplate;
+class quadControllerTemplate;
 
 class quadParams
 {

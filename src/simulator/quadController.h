@@ -158,7 +158,7 @@ class quadControllerTemplate
 };
 
 // Trajectory Controllers
-class PDTrajectoryController : trajectoryControllerTemplate
+class PDTrajectoryController : public trajectoryControllerTemplate
 {
     private:
         // Controller variables - pointers to allow easy modification of change in gains to flow down
@@ -208,7 +208,7 @@ class PDTrajectoryController : trajectoryControllerTemplate
 };
 
 // Attitude Controllers
-class PDAttitudeController : attitudeControllerTemplate
+class PDAttitudeController : public attitudeControllerTemplate
 {
         private:
         // Controller variables - pointers to allow easy modification of change in gains to flow down
@@ -257,7 +257,7 @@ class PDAttitudeController : attitudeControllerTemplate
 };
 
 // State Estimators
-class ukfEstimator : stateEstimatorTemplate
+class ukfEstimator : public stateEstimatorTemplate
 {
     private:
         // Sigma Point Spacing Parameters
@@ -298,34 +298,31 @@ class ukfEstimator : stateEstimatorTemplate
 class naiveEstimator : stateEstimatorTemplate // WIP
 {
     private:
-        std::shared_ptr<sensorTemplate> IMUPtr;
+        sensorTemplate * IMUPtr;
 
     public:
-        naiveEstimator(std::shared_ptr<quadParams> paramsPtr): stateEstimatorTemplate(paramsPtr)
-        {
-            for(int i=0;i<paramsPtr->sensors().size();i++)
-            {
-                if(paramsPtr->sensors()(i)->type() == "IMU") // THIS IS JUST PSEUDOCODE
-                {
-                    IMUPtr = paramsPtr->sensors()(i); // RESOLVE THIS TYPE ISSUE
-                }
-            } 
-        }
+        naiveEstimator(std::shared_ptr<quadParams> paramsPtr);
 };
 
 
 
 
 
-class naievePDController : quadControllerTemplate
+class naievePDController : public quadControllerTemplate
 {
-    PDTrajectoryController trajCtrl_();
-    PDAttitudeController attCtrl_(); 
+    std::shared_ptr<PDTrajectoryController> trajCtrlPtr_;
+    std::shared_ptr<PDAttitudeController> attCtrlPtr_; 
 
-    std::make_shared<PDTrajectoryController> trajCtrlPtr(trajCtrl_);
-    std::make_shared<PDAttitudeController> attCtrlPtr(attCtrl_);
+    double placholderTrajKp = 1;
+    double placeholderTrajKd = 1;
+
+    Eigen::Vector3d placeholderAttKp = Eigen::Vector3d::Ones();
+    Eigen::Vector3d placeholderAttKd = Eigen::Vector3d::Ones();
+
     naievePDController(): 
-        quadControllerTemplate(trajCtrlPtr,attCtrlPtr)
+    trajCtrlPtr_(std::make_shared<PDTrajectoryController>(std::make_shared<double>(placholderTrajKp), std::make_shared<double>(placeholderTrajKd), 1, 9.81)), // Placeholder mass, gravity values
+    attCtrlPtr_(std::make_shared<PDAttitudeController>(std::make_shared<Eigen::Vector3d>(placeholderAttKp), std::make_shared<Eigen::Vector3d>(placeholderAttKd), 1, 9.81)),
+        quadControllerTemplate(trajCtrlPtr_, attCtrlPtr_)
     {}
 };
 
