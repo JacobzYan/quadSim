@@ -2,9 +2,10 @@
 #include <Eigen/Dense>
 #include <ode/ode_dopri_54.h>
 
-#include "quadParams.h"
-#include "quadState.h"
 
+#include "quadState.h"
+#include "quadParams.h" 
+#include "sensors.h"
 
 // Passing Datastructures
 struct trajectoryControllerPacket
@@ -298,7 +299,7 @@ class ukfEstimator : public stateEstimatorTemplate
 class naiveEstimator : stateEstimatorTemplate // WIP
 {
     private:
-        sensorTemplate * IMUPtr;
+        const sensorTemplate * IMUPtr;
 
     public:
         naiveEstimator(std::shared_ptr<quadParams> paramsPtr);
@@ -307,7 +308,7 @@ class naiveEstimator : stateEstimatorTemplate // WIP
 
 
 
-
+// Controllers
 class naievePDController : public quadControllerTemplate
 {
     std::shared_ptr<PDTrajectoryController> trajCtrlPtr_;
