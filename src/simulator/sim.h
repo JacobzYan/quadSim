@@ -44,7 +44,8 @@ class quad : public ode::OdeDoPri54
         static inline stateVector defaultStateVector();
         const quadState & defaultquadState()
         {
-            static const quadState defaultState{};   
+            const quadState::VectorNd defaultMemory = quadState::VectorNd::Zero();
+            static const quadState defaultState(defaultMemory);   
             return defaultState;
         }
         
