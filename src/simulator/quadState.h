@@ -35,13 +35,13 @@ class droneState
         // Constructors using defaultState own the memory. 
         droneState(): ownedMemory(), stateAsVec_(ownedMemory.data()){setDefaultState();} // Default uses internally allocated memory with default state
         droneState(const stateVector & state) : ownedMemory(state), stateAsVec_(ownedMemory.data()){} // Takes in initial state by value
-        droneState(Eigen::Map<stateVector> & stateMap) : stateAsVec_(stateMap.data()){} // Takes an externally allocated double array wrapped with Eigen::Map and use that memory
+        droneState(const VectorNd & SVNd): ownedMemory(), stateAsVec_(ownedMemory.data()) {ownedMemory = SVNd;} // Copies in a VectorND into internal memory
         droneState(double* state) : stateAsVec_(state){} // Takes an externally allocated double array and use that memory - NO SIZE CHECK
         droneState(
                 const Eigen::Vector3d & pos = Eigen::Vector3d::Zero(), 
                 const Eigen::Matrix3d & RBI = Eigen::Matrix3d::Identity(),
                 const Eigen::Vector<double, nProps> & propOmegaB = Eigen::Vector<double, nProps>::Zero()
-                )
+                ): ownedMemory(), stateAsVec_(ownedMemory.data())
                 {
                     this->pos() = pos; // "this" keyword is a pointer to self
                     this->RBI() = RBI;
