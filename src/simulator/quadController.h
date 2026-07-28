@@ -325,5 +325,19 @@ class naievePDController : public quadControllerTemplate
     attCtrlPtr_(std::make_shared<PDAttitudeController>(std::make_shared<Eigen::Vector3d>(placeholderAttKp), std::make_shared<Eigen::Vector3d>(placeholderAttKd), 1, 9.81)),
         quadControllerTemplate(trajCtrlPtr_, attCtrlPtr_)
     {}
+
+
+    // Assumes motors face up
+    void voltageConverter(const Eigen::Vector4d* motorVoltages, const Eigen::Vector3d & NDemand, const double FDemand)
+    {
+        
+
+
+
+        // Limit max voltage
+        // Set negative F des to 0
+        // Determine max force from motor max voltage
+        // If force demand from any motor is too high, incrementally decrease demanded torque until no motor torque demand is too high
+    }
 };
 
