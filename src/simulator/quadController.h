@@ -311,6 +311,12 @@ class naiveEstimator : stateEstimatorTemplate // WIP
 // Controllers
 class naievePDController : public quadControllerTemplate
 {
+    private:
+        Eigen::Matrix4d VCBaseMat;
+        double VCFMax;
+        const static double eaMax = 12; // Later this should be a quad parameter
+    public:
+
     std::shared_ptr<PDTrajectoryController> trajCtrlPtr_;
     std::shared_ptr<PDAttitudeController> attCtrlPtr_; 
 
@@ -321,23 +327,69 @@ class naievePDController : public quadControllerTemplate
     Eigen::Vector3d placeholderAttKd = Eigen::Vector3d::Ones();
 
     naievePDController(): 
-    trajCtrlPtr_(std::make_shared<PDTrajectoryController>(std::make_shared<double>(placholderTrajKp), std::make_shared<double>(placeholderTrajKd), 1, 9.81)), // Placeholder mass, gravity values
-    attCtrlPtr_(std::make_shared<PDAttitudeController>(std::make_shared<Eigen::Vector3d>(placeholderAttKp), std::make_shared<Eigen::Vector3d>(placeholderAttKd), 1, 9.81)),
-        quadControllerTemplate(trajCtrlPtr_, attCtrlPtr_)
-    {}
+        trajCtrlPtr_(std::make_shared<PDTrajectoryController>(std::make_shared<double>(placholderTrajKp), std::make_shared<double>(placeholderTrajKd), 1, 9.81)), // Placeholder mass, gravity values
+        attCtrlPtr_(std::make_shared<PDAttitudeController>(std::make_shared<Eigen::Vector3d>(placeholderAttKp), std::make_shared<Eigen::Vector3d>(placeholderAttKd), 1, 9.81)),
+        quadControllerTemplate(trajCtrlPtr_, attCtrlPtr_),
+        VCBaseMat(Eigen::Matrix4d::Zero())
 
+        {updateVCBaseMat();}
+
+    void updateVCBaseMat()
+    {
+        Eigen::Matrix<double, 2, 4> temp, temp2;
+        temp = paramsPtr_->propLocationXY().reverse();
+       
+
+        Eigen::Vector4d kTVec = (paramsPtr_->propKn().array() / paramsPtr_->propKf().array()).matrix();
+        VCBaseMat.row(0) = Eigen::Vector4d::Ones();
+        VCBaseMat.row(1) = temp.row(1);
+        VCBaseMat.row(2) = - temp.row(0);
+        VCBaseMat.row(3) = kTVec;
+        VCBaseMat = (VCBaseMat.array() * paramsPtr_->propKf().array() / paramsPtr_->propCm().transpose().array()).matrix();
+
+        VCFMax = (paramsPtr_->propCm().array().square() * paramsPtr_->propKf().array().square()).sum() * eaMax^2;
+    }
+
+    void updateVCFMax()
+    {
+
+    }
 
     // Assumes motors face up
-    void voltageConverter(const Eigen::Vector4d* motorVoltages, const Eigen::Vector3d & NDemand, const double FDemand)
+    void voltageConverter(Eigen::Vector4d* motorVoltages, const Eigen::Vector3d & NDemand, const double FDemand)
     {
+        
+        const static double dTorqueModifier = .05;
+        double torqueModifier = 1;
+        Eigen::Vector4d vWorking, eaVec;
+        
+        while(true)
+        {
+            vWorking.segment(0,1) = std::min(FDemand, VCFMax); // Working F value
+            vWorking.segment(1,3) = NDemand * torqueModifier; // Working N value
+
+            eaVec = VCBaseMat * vWorking;
+
+            if(std::max(eaVec.data()) < eaMax)
+            {
+                break;
+            }
+
+            torqueModifier -= dTorqueModifier;
+            
+
+        }
+        motorVoltages = eaVec;
+
+
+        // Limit max voltage - TODO
+        // Set negative F des to 0
+        // Determine max force from motor max voltage
+        // If force demand from any motor is too high, incrementally decrease demanded torque until no motor torque demand is too high
         
 
 
 
-        // Limit max voltage
-        // Set negative F des to 0
-        // Determine max force from motor max voltage
-        // If force demand from any motor is too high, incrementally decrease demanded torque until no motor torque demand is too high
     }
 };
 
