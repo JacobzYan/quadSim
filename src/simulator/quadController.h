@@ -46,7 +46,7 @@ struct trajectory
 // Controller templates
 class trajectoryControllerTemplate
 {
-    private:
+    protected:
         // Controller variables - pointers to allow easy modification of change in gains to flow down
         double m_;
         double g_;
@@ -85,7 +85,7 @@ class trajectoryControllerTemplate
 };
 class attitudeControllerTemplate
 {
-        private:
+        protected:
         // Controller variables - pointers to allow easy modification of change in gains to flow down
         double m_;
         double g_;
@@ -115,7 +115,7 @@ class attitudeControllerTemplate
 };
 class stateEstimatorTemplate
 {
-    private:
+    protected:
         
         // Reference Info storage
         std::shared_ptr<quadParams> paramsPtr_;
@@ -138,7 +138,7 @@ class stateEstimatorTemplate
 };
 class quadControllerTemplate
 {
-    private:
+    protected:
         // stateEstimator estimator_;
         std::shared_ptr<trajectoryControllerTemplate> trajCon_;
         std::shared_ptr<attitudeControllerTemplate> attCon_;
@@ -314,7 +314,7 @@ class naievePDController : public quadControllerTemplate
     private:
         Eigen::Matrix4d VCBaseMat;
         double VCFMax;
-        const static double eaMax = 12; // Later this should be a quad parameter
+        static constexpr double eaMax = 12; // Later this should be a quad parameter
     public:
 
     std::shared_ptr<PDTrajectoryController> trajCtrlPtr_;
@@ -345,15 +345,15 @@ class naievePDController : public quadControllerTemplate
         VCBaseMat.row(1) = temp.row(1);
         VCBaseMat.row(2) = - temp.row(0);
         VCBaseMat.row(3) = kTVec;
-        VCBaseMat = (VCBaseMat.array() * paramsPtr_->propKf().array() / paramsPtr_->propCm().transpose().array()).matrix();
 
-        VCFMax = (paramsPtr_->propCm().array().square() * paramsPtr_->propKf().array().square()).sum() * eaMax^2;
+        // SPLIT INTO 2 LINES FOR DEBUG
+        // VCBaseMat = (VCBaseMat.array() * paramsPtr_->propKf().array() / paramsPtr_->propCm().transpose().array()).matrix();
+        VCBaseMat = (VCBaseMat.array() * paramsPtr_->propKf().array()).matrix();
+        VCBaseMat = VCBaseMat.array() / paramsPtr_->propCm().transpose().array();
+
+        VCFMax = (paramsPtr_->propCm().array().square() * paramsPtr_->propKf().array().square()).sum() * eaMax * eaMax);
     }
 
-    void updateVCFMax()
-    {
-
-    }
 
     // Assumes motors face up
     void voltageConverter(Eigen::Vector4d* motorVoltages, const Eigen::Vector3d & NDemand, const double FDemand)

@@ -136,30 +136,30 @@ public:
     //Misc
     void printValues() const;
     void printValues(int nTabs) const;
-    const Eigen::Vector4d const propKf()
+    const Eigen::Vector4d propKf() const
     {
         Eigen::Vector4d temp;
         temp << props()[0]->kF(), props()[1]->kF(), props()[2]->kF(), props()[3]->kF();
         return temp;
     }
-    const Eigen::Vector4d const propKn()
+    const Eigen::Vector4d propKn() const
     {
         Eigen::Vector4d temp;
         temp << props()[0]->kN(), props()[1]->kN(), props()[2]->kN(), props()[3]->kN();
         return temp;
     }
-    const Eigen::Vector4d const propCm()
+    const Eigen::Vector4d propCm() const
     {
         Eigen::Vector4d temp;
         temp << props()[0]->cm(), props()[1]->cm(), props()[2]->cm(), props()[3]->cm();
         return temp;
     }
-    const Eigen::Matrix<double, 3, 4> const propLocationXY()
+    const Eigen::Matrix<double, 3, 4> propLocationXY() const
     {
         Eigen::Matrix<double, 2, 4> temp = Eigen::Matrix<double, 2, 4>::Zero();
         for(int i;i<4;i++)
         {
-            temp.col(i) = props()[i]->location.head<2>();
+            temp.col(i) = props()[i]->location().head<2>();
         }
         return temp;
     }
