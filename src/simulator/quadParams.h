@@ -136,6 +136,8 @@ public:
     //Misc
     void printValues() const;
     void printValues(int nTabs) const;
+
+    // There has to be a better way to implement these functions
     const Eigen::Vector4d propKf() const
     {
         Eigen::Vector4d temp;
@@ -159,8 +161,14 @@ public:
         Eigen::Matrix<double, 2, 4> temp = Eigen::Matrix<double, 2, 4>::Zero();
         for(int i;i<4;i++)
         {
-            temp.col(i) = props()[i]->location().head<2>();
+            temp.col(i) = props()[i]->location().head<2>().transpose();
         }
+        return temp;
+    }
+    const Eigen::Vector4d propDir() const
+    {
+        Eigen::Vector4d temp;
+        temp << props()[0]->omegaRDir(), props()[1]->omegaRDir(), props()[2]->omegaRDir(), props()[3]->omegaRDir();
         return temp;
     }
 

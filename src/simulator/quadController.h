@@ -336,22 +336,29 @@ class naievePDController : public quadControllerTemplate
 
     void updateVCBaseMat()
     {
+        /*
+        INTENDED STRUCTURE:
+        [kf1 * cm1^2 ... kfn * cmn^2]
+        [kf1 * y1    ...    kfn * yn]
+        [-kf1 * x1   ...   -kfn * xn]
+        [kn1, -kn2   ... kn(n-1), -knn]
+        */
         Eigen::Matrix<double, 2, 4> temp, temp2;
-        temp = paramsPtr_->propLocationXY().reverse();
+        temp = paramsPtr_->propLocationXY().block(1,0,2,4); // Grabs X,Y Pos without editing them
        
 
-        Eigen::Vector4d kTVec = (paramsPtr_->propKn().array() / paramsPtr_->propKf().array()).matrix();
+        Eigen::Vector4d kTVec = (paramsPtr_->propKn().array() / paramsPtr_->propKf().array() * paramsPtr_->propDir().array()).matrix();
         VCBaseMat.row(0) = Eigen::Vector4d::Ones();
-        VCBaseMat.row(1) = temp.row(1);
+        VCBaseMat.row(1) = temp.row(1); // Puts Y values in row 2, -x values in row 1
         VCBaseMat.row(2) = - temp.row(0);
         VCBaseMat.row(3) = kTVec;
 
         // SPLIT INTO 2 LINES FOR DEBUG
         // VCBaseMat = (VCBaseMat.array() * paramsPtr_->propKf().array() / paramsPtr_->propCm().transpose().array()).matrix();
-        VCBaseMat = (VCBaseMat.array() * paramsPtr_->propKf().array()).matrix();
-        VCBaseMat = VCBaseMat.array() / paramsPtr_->propCm().transpose().array();
+        VCBaseMat = VCBaseMat * paramsPtr_->propKf().asDiagonal();
+        VCBaseMat = VCBaseMat.array() * paramsPtr_->propCm().asDiagonal().inverse();
 
-        VCFMax = (paramsPtr_->propCm().array().square() * paramsPtr_->propKf().array().square()).sum() * eaMax * eaMax);
+        VCFMax = (paramsPtr_->propCm().array().square() * paramsPtr_->propKf().array().square()).sum() * eaMax * eaMax;
     }
 
 
@@ -365,12 +372,12 @@ class naievePDController : public quadControllerTemplate
         
         while(true)
         {
-            vWorking.segment(0,1) = std::min(FDemand, VCFMax); // Working F value
+            vWorking(0) = std::min(FDemand, VCFMax); // Working F value
             vWorking.segment(1,3) = NDemand * torqueModifier; // Working N value
 
             eaVec = VCBaseMat * vWorking;
 
-            if(std::max(eaVec.data()) < eaMax)
+            if(eaVec.maxCoeff() < eaMax)
             {
                 break;
             }
@@ -379,7 +386,7 @@ class naievePDController : public quadControllerTemplate
             
 
         }
-        motorVoltages = eaVec;
+        * motorVoltages = eaVec;
 
 
         // Limit max voltage - TODO
