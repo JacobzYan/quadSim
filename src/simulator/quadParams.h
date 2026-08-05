@@ -45,7 +45,7 @@ private:
     Eigen::Vector3d xCOM_; // [m] Location of the center of mass relative to the origin
     std::vector<const propParams*> props_; // Vector of pointers to prop objects
 
-    // Quad Controller Params
+    // Controller Params
     std::shared_ptr<double> gPtr_ = std::make_shared<double>(g_);
     std::shared_ptr<double> mPtr_ = std::make_shared<double>(m_);
     std::shared_ptr<quadControllerTemplate> controller;
@@ -54,9 +54,6 @@ private:
     std::vector<const sensorTemplate*> sensors_; // Vector of pointers to sensor objects
     const inline static std::vector<std::string> sensorTypes = {"Default", "IMU", "Camera"}; // Types of sensors used for config file reading init
 
-
-    // Controller Params
-    // Implement pointer for quadController
 
 public:
     // Constructors + Destructor
@@ -137,7 +134,8 @@ public:
     void printValues() const;
     void printValues(int nTabs) const;
 
-    // There has to be a better way to implement these functions
+    // Retrieve prop data in a vectorized format
+    // There has to be a better way to implement these functions, this is also not extensible to other numbers of props
     const Eigen::Vector4d propKf() const
     {
         Eigen::Vector4d temp;
@@ -156,12 +154,12 @@ public:
         temp << props()[0]->cm(), props()[1]->cm(), props()[2]->cm(), props()[3]->cm();
         return temp;
     }
-    const Eigen::Matrix<double, 3, 4> propLocationXY() const
+    const Eigen::Matrix<double, 3, 4> propLocation() const
     {
-        Eigen::Matrix<double, 2, 4> temp = Eigen::Matrix<double, 2, 4>::Zero();
+        Eigen::Matrix<double, 3, 4> temp = Eigen::Matrix<double, 3, 4>::Zero();
         for(int i;i<4;i++)
         {
-            temp.col(i) = props()[i]->location().head<2>().transpose();
+            temp.col(i) = props()[i]->location().transpose();
         }
         return temp;
     }

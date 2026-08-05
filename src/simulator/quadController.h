@@ -344,7 +344,7 @@ class naievePDController : public quadControllerTemplate
         [kn1, -kn2   ... kn(n-1), -knn]
         */
         Eigen::Matrix<double, 2, 4> temp, temp2;
-        temp = paramsPtr_->propLocationXY().block(1,0,2,4); // Grabs X,Y Pos without editing them
+        temp = paramsPtr_->propLocation().block(1,0,2,4); // Grabs X,Y Pos without editing them
        
 
         Eigen::Vector4d kTVec = (paramsPtr_->propKn().array() / paramsPtr_->propKf().array() * paramsPtr_->propDir().array()).matrix();
@@ -356,7 +356,7 @@ class naievePDController : public quadControllerTemplate
         // SPLIT INTO 2 LINES FOR DEBUG
         // VCBaseMat = (VCBaseMat.array() * paramsPtr_->propKf().array() / paramsPtr_->propCm().transpose().array()).matrix();
         VCBaseMat = VCBaseMat * paramsPtr_->propKf().asDiagonal();
-        VCBaseMat = VCBaseMat.array() * paramsPtr_->propCm().asDiagonal().inverse();
+        VCBaseMat = VCBaseMat * paramsPtr_->propCm().asDiagonal().inverse();
 
         VCFMax = (paramsPtr_->propCm().array().square() * paramsPtr_->propKf().array().square()).sum() * eaMax * eaMax;
     }
