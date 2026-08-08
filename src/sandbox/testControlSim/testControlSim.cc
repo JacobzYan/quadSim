@@ -86,7 +86,7 @@ int main()
     for(int i=0;i<timesteps;i++)
     {   
         // Decide Control
-        defaultQuad.
+        defaultQuad.controlQuad()
         
         // Simulate timestep
         defaultQuad.solve_adaptive(dt, substep_dt, true);

@@ -48,7 +48,7 @@ private:
     // Controller Params
     std::shared_ptr<double> gPtr_ = std::make_shared<double>(g_);
     std::shared_ptr<double> mPtr_ = std::make_shared<double>(m_);
-    std::shared_ptr<quadControllerTemplate> controller;
+    std::shared_ptr<quadControllerTemplate> controller_;
     
     // Sensor Params
     std::vector<const sensorTemplate*> sensors_; // Vector of pointers to sensor objects
@@ -104,6 +104,7 @@ public:
     const Eigen::Vector3d& xCOM() const {return xCOM_;} // [m] Location of the center of mass relative to the origin
     const std::vector< const propParams*>& props() const {return props_;} // Returns reference to vector of pointers to prop objects
     const std::vector<const sensorTemplate*>& sensors() const {return sensors_;} // Returns referense to sensors
+    const std::shared_ptr<quadControllerTemplate> controller() const {return controller_;}
     const std::string & name() const {return name_;}
 
     // Setters

@@ -70,14 +70,28 @@ class quad : public ode::OdeDoPri54
         } // Constructor with given initial pose
 
         // Take measurements
-        
+        quadState & senseAndEstimate(enviornment env)
+        {
+            params_.controller()->getState(env, state_);
+            return state_;
+        }
         
         
         // Decides on a control output based on the enviornment and goal - no return
 
 
         // Decides on a control output based on the enviornment and goal - returns chosen motor voltages
+        Eigen::Vector4d controlQuad(
+            const quadState & stateEstimate, 
+            const trajectory & trajectory)
+            
+        {
+            Eigen::Vector4d output = Eigen::Vector4d::Zero();
+            controllerDemands demands = params_.controller()->getDemands(stateEstimate, trajectory);
+            params_.controller()->getVoltages(& output, demands.NB, demands.F);
 
+            return output;
+        }
 
 
         // Updates precalculated matrices used to determine net forces, torques, and motor speeds

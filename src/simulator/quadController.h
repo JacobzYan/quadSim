@@ -38,6 +38,8 @@ struct trajectory
 {
     double dt;
     std::vector<Eigen::Vector3d> position;
+    std::vector<Eigen::Vector3d> velocity;
+    std::vector<Eigen::Vector3d> acceleration;
     std::vector<double> heading;
 };
 
@@ -121,12 +123,14 @@ class stateEstimatorTemplate
         std::shared_ptr<quadParams> paramsPtr_;
         std::shared_ptr<enviornment> env_Ptr;
         
+        
+
+    public:
+
         // Output
         quadState::VectorNd estStateMemory = quadState::VectorNd::Zero(); // Need to allocate memory for the map
         quadState::stateVector estState_; 
 
-    public:
-        
         // Constructors
         stateEstimatorTemplate(std::shared_ptr<quadParams> paramsPtr): paramsPtr_(paramsPtr), estState_(estStateMemory.data())
         {
@@ -134,16 +138,19 @@ class stateEstimatorTemplate
         }
 
         // Estimate the state given the sensors and their respective readings - possibly make this just pull from quadParams?
-        quadState::stateVector estState (const std::vector<sensorTemplate*> measSensorPointers, std::vector<std::vector<double>> sensorReadings);
+        virtual quadState::stateVector estState (const std::vector<sensorTemplate*> measSensorPointers, std::vector<std::vector<double>> sensorReadings);
+        virtual quadState::stateVector estState(); // PLACEHOLDER FOR NAIEVE ESTIMATOR
 };
 class quadControllerTemplate
 {
     protected:
+        // These not needed?
         // stateEstimator estimator_;
         std::shared_ptr<trajectoryControllerTemplate> trajCon_;
         std::shared_ptr<attitudeControllerTemplate> attCon_;
         std::vector<std::shared_ptr<sensorTemplate>> sensors_;
         std::shared_ptr<quadParams> paramsPtr_;
+        
         public:
         quadControllerTemplate
         (
@@ -154,8 +161,9 @@ class quadControllerTemplate
             attCon_(attCon){}
 
         // 
-        controllerDemands getDemands(quadState state, trajectory traj);
-        Eigen::VectorXd getVoltages(quadState state, trajectory traj);
+        virtual controllerDemands getDemands(quadState state, trajectory traj);
+        virtual void getVoltages(Eigen::Vector4d* motorVoltages, const Eigen::Vector3d & NDemand, const double FDemand);
+        virtual void getState(enviornment env, quadState & state);
 };
 
 // Trajectory Controllers
@@ -296,13 +304,15 @@ class ukfEstimator : public stateEstimatorTemplate
     
 };
 
-class naiveEstimator : stateEstimatorTemplate // WIP
+class naiveEstimator : public stateEstimatorTemplate // WIP
 {
     private:
         const sensorTemplate * IMUPtr;
 
     public:
-        naiveEstimator(std::shared_ptr<quadParams> paramsPtr);
+        naiveEstimator(std::shared_ptr<quadParams> paramsPtr): IMUPtr(paramsPtr->sensors()[0]), stateEstimatorTemplate(paramsPtr) // REWORK THIS TO USE SMART POINTERS - take time to go through repo and replace all normal pointers with smart
+        {}
+
 };
 
 
@@ -317,21 +327,21 @@ class naievePDController : public quadControllerTemplate
         static constexpr double eaMax = 12; // Later this should be a quad parameter
     public:
 
-    std::shared_ptr<PDTrajectoryController> trajCtrlPtr_;
-    std::shared_ptr<PDAttitudeController> attCtrlPtr_; 
-
+    std::shared_ptr<PDTrajectoryController> trajCtrlPtr_; // Remove these, keep them in the base class so can always be referenced
+    std::shared_ptr<PDAttitudeController> attCtrlPtr_; // Remove these, keep them in the base class so can always be referenced
+    std::shared_ptr<stateEstimatorTemplate> estPtr_; // Remove these, keep them in the base class so can always be referenced
     double placholderTrajKp = 1;
     double placeholderTrajKd = 1;
 
     Eigen::Vector3d placeholderAttKp = Eigen::Vector3d::Ones();
     Eigen::Vector3d placeholderAttKd = Eigen::Vector3d::Ones();
 
-    naievePDController(): 
+    naievePDController(std::shared_ptr<quadParams> quadParamsPtr): 
         trajCtrlPtr_(std::make_shared<PDTrajectoryController>(std::make_shared<double>(placholderTrajKp), std::make_shared<double>(placeholderTrajKd), 1, 9.81)), // Placeholder mass, gravity values
         attCtrlPtr_(std::make_shared<PDAttitudeController>(std::make_shared<Eigen::Vector3d>(placeholderAttKp), std::make_shared<Eigen::Vector3d>(placeholderAttKd), 1, 9.81)),
+        estPtr_(std::make_shared<stateEstimatorTemplate>(naiveEstimator(quadParamsPtr))),
         quadControllerTemplate(trajCtrlPtr_, attCtrlPtr_),
         VCBaseMat(Eigen::Matrix4d::Zero())
-
         {updateVCBaseMat();}
 
     void updateVCBaseMat()
@@ -363,7 +373,7 @@ class naievePDController : public quadControllerTemplate
 
 
     // Assumes motors face up
-    void voltageConverter(Eigen::Vector4d* motorVoltages, const Eigen::Vector3d & NDemand, const double FDemand)
+    void getVoltages(Eigen::Vector4d* motorVoltages, const Eigen::Vector3d & NDemand, const double FDemand) override
     {
         
         const static double dTorqueModifier = .05;
@@ -393,10 +403,12 @@ class naievePDController : public quadControllerTemplate
         // Set negative F des to 0
         // Determine max force from motor max voltage
         // If force demand from any motor is too high, incrementally decrease demanded torque until no motor torque demand is too high
-        
-
-
-
     }
+
+    void getState(enviornment env, quadState & state) // Later need to make these more generic, move computation to derived classes that this holds
+    {
+        estPtr_->estStateMemory = state.stateAsVec();
+    }
+        
 };
 

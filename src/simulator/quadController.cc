@@ -75,17 +75,17 @@ const Eigen::Vector3d & PDAttitudeController::response(
 
 
 
-
-naiveEstimator::naiveEstimator(std::shared_ptr<quadParams> paramsPtr): stateEstimatorTemplate(paramsPtr)
-{
-    for(int i=0;i<paramsPtr->sensors().size();i++)
-            {
-                if(paramsPtr->sensors()[i]->type == "IMU") // THIS IS JUST PSEUDOCODE
-                {
-                    IMUPtr = paramsPtr->sensors()[i]; // RESOLVE THIS TYPE ISSUE
-                }
-            } 
-}
+// May Not be needed - just implement in header or figure out how to make it work
+// naiveEstimator::naiveEstimator(std::shared_ptr<quadParams> paramsPtr): stateEstimatorTemplate(paramsPtr)
+// {
+//     for(int i=0;i<paramsPtr->sensors().size();i++)
+//             {
+//                 if(paramsPtr->sensors()[i]->type == "IMU") // THIS IS JUST PSEUDOCODE
+//                 {
+//                     IMUPtr = paramsPtr->sensors()[i]; // RESOLVE THIS TYPE ISSUE
+//                 }
+//             } 
+// }
 
 
 // Assume that the fDynamics propogation sensor is 
