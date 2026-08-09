@@ -16,17 +16,23 @@ class poseTemplate
         Eigen::Vector3d location_; // [m] Location of the module with respect to the quad body frame, origin
         Eigen::Matrix3d R_; // Rotation matrix from module coordinate frame to quad body coordinate frame
     public:
-        // Constructors
-        poseTemplate(const Eigen::Vector3d & location, const::Eigen::Matrix3d & R) // Arg constructor
+        /// Constructors
+        poseTemplate(){} // Null constructor to reserve memory
+        // Argument Constructor
+        /* 
+        @param location location of the origin of the module with respect to the quad body frame and origin
+        @param R Orientation of the module in point rotation convention with respect to the body frame
+        */
+        poseTemplate(const Eigen::Vector3d & location, const::Eigen::Matrix3d & R)
             : location_(location), R_(R)
             {}
-        poseTemplate(){} // Null constructor to reserve memory
+        
 
-        // Getters
+        /// Getters
         const Eigen::Vector3d& location() const {return location_;}
         const Eigen::Matrix3d& R() const {return R_;}
 
-        // Setters
+        /// Setters
         void location(const Eigen::Vector3d& location){location_=location;}
         void R(const Eigen::Matrix3d & R){R_=R;}
 
@@ -37,30 +43,37 @@ class poseTemplate
 class propParams : public poseTemplate
 {
     private:
-        double kMotor_; // Motor constant
-        double kF_; //  prop lift force coeff
-        double kN_; //  prop torque coeff
+
+        /// Parameters
+        double kF_, kN_; //  prop lift force coeff, prop torque coeff
+        double cm_, tauM_; // motor constant response, and  motor time constant
         int omegaRDir_; // Direction - +1 for CCW, -1 for CW
-
-        double cm_, tauM_; // Motor constant response, and time constant
-
         std::string name_;
 
-        // Statics
-        inline static const std::vector<std::string> varNames = {"location", "R", "kMotor", "kF", "kN", "omegaRDir", "cm", "tauM", "name"}; // List of variable names to recognize
-        const int nVars = varNames.size();
+        /// Statics
+        inline static const std::array<std::string, 8> varNames = {"location", "R", "kF", "kN", "omegaRDir", "cm", "tauM", "name"}; // List of variable names to recognize
         
     public:
     
     // Constructors
-    propParams(const double kMotor, const double kF, const double kN) // Arg constructor
-        : kMotor_(kMotor), kF_(kF), kN_(kN)
-        {}
     propParams(){} // Empty constructor
-    propParams(const std::string & line); //String line constructor
+    // Arg constructor
+    /* 
+        @param kF Prop force coefficeint where F = kF * omega^2
+        @param kN Prop torque coefficeint where N = kN * omega^2
+        @param cm Prop motor constant where omega = cm * voltage
+        @param tauM Prop time constant 
+        @param omegaRDir Prop rotation direction where 1 is CCW and -1 is CW 
+        @param name Name of the prop
 
-    // Getters
-    const double kMotor() const {return kMotor_;}
+    */
+    propParams(const double kF, const double kN, const double cm, const double tauM, const double omegaRDir, const std::string name) 
+        : kF_(kF), kN_(kN), cm_(cm), tauM_(tauM), omegaRDir_(omegaRDir), name_(name)
+        {}
+    
+    propParams(const std::string & line); //String line constructor - Defined in quadParams.cc
+
+    /// Getters
     const double kF() const {return kF_;}
     const double kN() const {return kN_;}
     const int omegaRDir() const {return omegaRDir_;}
@@ -68,8 +81,7 @@ class propParams : public poseTemplate
     const double tauM() const {return tauM_;}
     const std::string & name() const {return name_;}
 
-    // Setters
-    void kMotor(const double kMotor){kMotor_=kMotor;}
+    /// Setters
     void kF(const double kF){kF_=kF;}
     void kN(const double kN){kN_=kN;}
     void omegaRDir(const double omegaRDir){omegaRDir_=omegaRDir;}
@@ -77,7 +89,7 @@ class propParams : public poseTemplate
     void tauM(const double tauM){tauM_=tauM;}
     void name(const std::string & name){name_=name;}
 
-    //Misc
+    ///Misc
     void printValues() const;
     void printValues(int nTabs) const;
 
