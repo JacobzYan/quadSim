@@ -27,3 +27,6 @@ prop= name = NE ; location =  .21, -.21, 0 ; R = 1,0,0,0,1,0,0,0,1 ; kF = 0.0000
 prop= name = NW ; location =  .21,  .21, 0 ; R = 1,0,0,0,1,0,0,0,1 ; kF = 0.0000055717 ; kN = 0.00000013678 ; direction =  1 ; tauM = .05; cm = 200
 prop= name = SE ; location = -.21,  .21, 0 ; R = 1,0,0,0,1,0,0,0,1 ; kF = 0.0000055717 ; kN = 0.00000013678 ; direction = -1 ; tauM = .05; cm = 200
 prop= name = SW ; location = -.21, -.21, 0 ; R = 1,0,0,0,1,0,0,0,1 ; kF = 0.0000055717 ; kN = 0.00000013678 ; direction =  1 ; tauM = .05; cm = 200
+
+
+controller = naievePD ; eaMax = 12 ; trajKp = 4 ; trajKd = 4 attKp = 1.2,2.4,1.2 ; attKd = .3,.6,4 ;

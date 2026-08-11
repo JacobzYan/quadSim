@@ -55,7 +55,7 @@ bool quadParams::readFile(std::string path)
 
             // Check if line start matches any variable names
             varIndex = -1;
-            for(int i=0;i<nVars;i++)
+            for(int i=0;i<varNames.size();i++)
             {
                 if(varNames[i] == varName)
                 {
@@ -243,7 +243,7 @@ propParams::propParams(const std::string & line)
 
         // Check if line start matches any variable names
         varIndex = -1;
-        for(int i=0;i<nVars;i++)
+        for(int i=0;i<varNames.size();i++)
         {
             if(varNames[i] == varName)
             {
@@ -265,25 +265,22 @@ propParams::propParams(const std::string & line)
             case 1: // R
                 R(splitMatrix3d(varValue, ','));
                 break;
-            case 2: // kMotor
-                kMotor(std::stod(varValue));
-                break;
-            case 3: // kF
+            case 2: // kF
                 kF(std::stod(varValue));
                 break;
-            case 4: // kN
+            case 3: // kN
                 kN(std::stod(varValue));
                 break;
-            case 5: // omegaRDir
+            case 4: // omegaRDir
                 omegaRDir(std::stod(varValue));
                 break;
-            case 6: // cm
+            case 5: // cm
                 cm(std::stod(varValue));
                 break;
-            case 7: // tauM
+            case 6: // tauM
                 tauM(std::stod(varValue));
                 break;
-            case 8:
+            case 7:
                 name(varValue);
                 break;
             default:
@@ -305,7 +302,6 @@ void propParams::printValues(int nTabs) const
     << startingTabs << name_ << " Parameters:" << endl
     << startingTabs << "\tlocation: " << matLineStart << location().format(matrixFormat) << endl
     << startingTabs << "\tR: " << matLineStart << R().format(matrixFormat) << endl
-    << startingTabs << "\tkMotor: " << kMotor() << endl
     << startingTabs << "\tkF: " << kF() << endl
     << startingTabs << "\tkN: "  << kN() << endl
     << startingTabs << "\tdirection: "  << omegaRDir() << endl

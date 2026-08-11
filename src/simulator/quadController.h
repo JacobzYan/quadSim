@@ -44,8 +44,7 @@ struct trajectory
 };
 
 
-//Controller Submodules
-// Controller templates
+// Trajectory Controllers
 class trajectoryControllerTemplate
 {
     protected:
@@ -85,88 +84,7 @@ class trajectoryControllerTemplate
                                     const Eigen::Vector3d & xDotDotDes = Eigen::Vector3d::Zero()
                                     );
 };
-class attitudeControllerTemplate
-{
-        protected:
-        // Controller variables - pointers to allow easy modification of change in gains to flow down
-        double m_;
-        double g_;
-        std::shared_ptr<quadParams> paramsPtr_;
 
-        // Helper Variables
-        Eigen::Vector3d FIDes;
-        Eigen::Vector3d FFGravity;
-        Eigen::Vector3d response_ = Eigen::Vector3d::Zero();
-
-    public:
-    // Explicitly set kp and kd
-        attitudeControllerTemplate(
-                        const double m,
-                        const double g=9.81
-                        )
-                        : g_(g), m_(m) {}
-
-        // Calculate control law response
-        const Eigen::Vector3d & response(
-                                        const Eigen::Matrix3d & RBI,
-                                        const Eigen::Vector3d & xDes, 
-                                        const Eigen::Vector3d & zDes, 
-                                        const Eigen::Vector3d & omegaB,
-                                        const Eigen::Matrix3d & JB
-                                        );
-};
-class stateEstimatorTemplate
-{
-    protected:
-        
-        // Reference Info storage
-        std::shared_ptr<quadParams> paramsPtr_;
-        std::shared_ptr<enviornment> env_Ptr;
-        
-        
-
-    public:
-
-        // Output
-        quadState::VectorNd estStateMemory = quadState::VectorNd::Zero(); // Need to allocate memory for the map
-        quadState::stateVector estState_; 
-
-        // Constructors
-        stateEstimatorTemplate(std::shared_ptr<quadParams> paramsPtr): paramsPtr_(paramsPtr), estState_(estStateMemory.data())
-        {
-            
-        }
-
-        // Estimate the state given the sensors and their respective readings - possibly make this just pull from quadParams?
-        virtual quadState::stateVector estState (const std::vector<sensorTemplate*> measSensorPointers, std::vector<std::vector<double>> sensorReadings);
-        virtual quadState::stateVector estState(); // PLACEHOLDER FOR NAIEVE ESTIMATOR
-};
-class quadControllerTemplate
-{
-    protected:
-        // These not needed?
-        // stateEstimator estimator_;
-        std::shared_ptr<trajectoryControllerTemplate> trajCon_;
-        std::shared_ptr<attitudeControllerTemplate> attCon_;
-        std::vector<std::shared_ptr<sensorTemplate>> sensors_;
-        std::shared_ptr<quadParams> paramsPtr_;
-        
-        public:
-        quadControllerTemplate
-        (
-            std::shared_ptr<trajectoryControllerTemplate> trajCon, 
-            std::shared_ptr<attitudeControllerTemplate> attCon
-        ):
-            trajCon_(trajCon), 
-            attCon_(attCon){}
-
-        // 
-        virtual controllerDemands getDemands(quadState state, trajectory traj);
-        virtual void getVoltages(Eigen::Vector4d* motorVoltages, const Eigen::Vector3d & NDemand, const double FDemand);
-        virtual void getState(enviornment env, quadState & state);
-};
-
-// Trajectory Controllers
 class PDTrajectoryController : public trajectoryControllerTemplate
 {
     private:
@@ -216,7 +134,39 @@ class PDTrajectoryController : public trajectoryControllerTemplate
                                     );
 };
 
+
 // Attitude Controllers
+class attitudeControllerTemplate
+{
+        protected:
+        // Controller variables - pointers to allow easy modification of change in gains to flow down
+        double m_;
+        double g_;
+        std::shared_ptr<quadParams> paramsPtr_;
+
+        // Helper Variables
+        Eigen::Vector3d FIDes;
+        Eigen::Vector3d FFGravity;
+        Eigen::Vector3d response_ = Eigen::Vector3d::Zero();
+
+    public:
+    // Explicitly set kp and kd
+        attitudeControllerTemplate(
+                        const double m,
+                        const double g=9.81
+                        )
+                        : g_(g), m_(m) {}
+
+        // Calculate control law response
+        const Eigen::Vector3d & response(
+                                        const Eigen::Matrix3d & RBI,
+                                        const Eigen::Vector3d & xDes, 
+                                        const Eigen::Vector3d & zDes, 
+                                        const Eigen::Vector3d & omegaB,
+                                        const Eigen::Matrix3d & JB
+                                        );
+};
+
 class PDAttitudeController : public attitudeControllerTemplate
 {
         private:
@@ -265,7 +215,35 @@ class PDAttitudeController : public attitudeControllerTemplate
                                         );
 };
 
+
 // State Estimators
+class stateEstimatorTemplate
+{
+    protected:
+        
+        // Reference Info storage
+        std::shared_ptr<quadParams> paramsPtr_;
+        std::shared_ptr<enviornment> env_Ptr;
+        
+        
+
+    public:
+
+        // Output
+        quadState::VectorNd estStateMemory = quadState::VectorNd::Zero(); // Need to allocate memory for the map
+        quadState::stateVector estState_; 
+
+        // Constructors
+        stateEstimatorTemplate(std::shared_ptr<quadParams> paramsPtr): paramsPtr_(paramsPtr), estState_(estStateMemory.data())
+        {
+            
+        }
+
+        // Estimate the state given the sensors and their respective readings - possibly make this just pull from quadParams?
+        virtual quadState::stateVector estState (const std::vector<sensorTemplate*> measSensorPointers, std::vector<std::vector<double>> sensorReadings);
+        virtual quadState::stateVector estState(); // PLACEHOLDER FOR NAIEVE ESTIMATOR
+};
+
 class ukfEstimator : public stateEstimatorTemplate
 {
     private:
@@ -319,6 +297,31 @@ class naiveEstimator : public stateEstimatorTemplate // WIP
 
 
 // Controllers
+class quadControllerTemplate
+{
+    protected:
+        // These not needed?
+        // stateEstimator estimator_;
+        std::shared_ptr<trajectoryControllerTemplate> trajCon_;
+        std::shared_ptr<attitudeControllerTemplate> attCon_;
+        std::vector<std::shared_ptr<sensorTemplate>> sensors_;
+        std::shared_ptr<quadParams> paramsPtr_;
+        
+        public:
+        quadControllerTemplate
+        (
+            std::shared_ptr<trajectoryControllerTemplate> trajCon, 
+            std::shared_ptr<attitudeControllerTemplate> attCon
+        ):
+            trajCon_(trajCon), 
+            attCon_(attCon){}
+
+        // 
+        virtual controllerDemands getDemands(quadState state, trajectory traj);
+        virtual void getVoltages(Eigen::Vector4d* motorVoltages, const Eigen::Vector3d & NDemand, const double FDemand);
+        virtual void getState(enviornment env, quadState & state);
+};
+
 class naievePDController : public quadControllerTemplate
 {
     private:
