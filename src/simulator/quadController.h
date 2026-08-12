@@ -6,6 +6,7 @@
 #include "quadState.h"
 #include "quadParams.h" 
 #include "sensors.h"
+#include "utils.h"
 
 // Passing Datastructures
 struct trajectoryControllerPacket
@@ -42,6 +43,72 @@ struct trajectory
     std::vector<Eigen::Vector3d> acceleration;
     std::vector<double> heading;
 };
+
+std::shared_ptr<quadControllerTemplate> readController(const std::string & line)
+{
+    // Controller Names
+    std::array<std::string, 1> controllerNames = {"naievePD"};
+
+    // Temp helper variables
+    std::string varName, varValue, controllerName, packet;
+    int delimiterLocation, controllerIndex;
+    bool controllerAssigned = false;
+
+    // Process line
+    std::string processingLine = line;
+    cutWhitespace(processingLine);
+
+    // Seperate out prop parameters with semicolon delimeters
+    replaceDelimiters(processingLine,';');
+    std::istringstream iss(processingLine);
+
+    
+    while(iss >> packet)
+    {
+        // Seperate out prop parameters
+        delimiterLocation = packet.find("=");
+        varName = packet.substr(0,delimiterLocation);
+        varValue = packet.substr(delimiterLocation+1, packet.size()-delimiterLocation-1);
+
+        // Trim all whitespace
+        cutWhitespace(varName);
+
+        // Ensure there is an equals sign
+        if(delimiterLocation==std::string::npos)
+        {
+            std::cout << "THIS PACKET CONTAINS NO EQUALS SIGN DELIMITER:" << std::endl << packet << std::endl;
+            continue;
+        }
+
+        // Check if controller type has been assigned yet
+        controllerIndex = -1;
+        for(int i=0;i<controllerNames.size();i++)
+        {
+            if(controllerNames[i] == varName)
+            {
+                controllerIndex = i;
+                controllerAssigned = true;
+                break;
+            }
+        }
+        // Check if controller is valid
+        if(!controllerAssigned)
+        {
+            std::cout << "Invalid controller name passed, using default naieve PD";
+        }
+
+        // Assign the appropriate controller constructor
+        switch(controllerIndex)
+        {
+            case 0: // naieve PD Controller
+                // Construct PD controller here - pass the rest of the iss as data for the controller?
+                break;
+
+            default:
+                break;
+        }
+    }
+}
 
 
 // Trajectory Controllers
