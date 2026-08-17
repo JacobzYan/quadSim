@@ -44,6 +44,7 @@ struct trajectory
     std::vector<double> heading;
 };
 
+// Read in type of controller from the data only
 std::shared_ptr<quadControllerTemplate> readController(const std::string & line)
 {
     // Controller Names
@@ -52,7 +53,6 @@ std::shared_ptr<quadControllerTemplate> readController(const std::string & line)
     // Temp helper variables
     std::string varName, varValue, controllerName, packet;
     int delimiterLocation, controllerIndex;
-    bool controllerAssigned = false;
 
     // Process line
     std::string processingLine = line;
@@ -80,28 +80,31 @@ std::shared_ptr<quadControllerTemplate> readController(const std::string & line)
             continue;
         }
 
-        // Check if controller type has been assigned yet
+        // Check if this packet has the controller type
         controllerIndex = -1;
         for(int i=0;i<controllerNames.size();i++)
         {
             if(controllerNames[i] == varName)
             {
                 controllerIndex = i;
-                controllerAssigned = true;
                 break;
             }
         }
-        // Check if controller is valid
-        if(!controllerAssigned)
+
+        // Skip to future packets if type is not here
+        if(controllerIndex==-1)
         {
-            std::cout << "Invalid controller name passed, using default naieve PD";
+            continue;
         }
+
 
         // Assign the appropriate controller constructor
         switch(controllerIndex)
         {
             case 0: // naieve PD Controller
                 // Construct PD controller here - pass the rest of the iss as data for the controller?
+                // naievePDController foo(processingLine);
+                return std::make_shared<quadControllerTemplate>(new naievePDController(processingLine));
                 break;
 
             default:
@@ -406,7 +409,14 @@ class naievePDController : public quadControllerTemplate
     Eigen::Vector3d placeholderAttKp = Eigen::Vector3d::Ones();
     Eigen::Vector3d placeholderAttKd = Eigen::Vector3d::Ones();
 
-    naievePDController(std::shared_ptr<quadParams> quadParamsPtr): 
+    naievePDController
+    (
+        std::shared_ptr<quadParams> quadParamsPtr,
+        const double trajKp=1,
+        const double trajKd=1,
+        const Eigen::Vector3d placeholderAttKp = Eigen::Vector3d::Ones(),
+        const Eigen::Vector3d placeholderAttKd = Eigen::Vector3d::Ones()
+    ): 
         trajCtrlPtr_(std::make_shared<PDTrajectoryController>(std::make_shared<double>(placholderTrajKp), std::make_shared<double>(placeholderTrajKd), 1, 9.81)), // Placeholder mass, gravity values
         attCtrlPtr_(std::make_shared<PDAttitudeController>(std::make_shared<Eigen::Vector3d>(placeholderAttKp), std::make_shared<Eigen::Vector3d>(placeholderAttKd), 1, 9.81)),
         estPtr_(std::make_shared<stateEstimatorTemplate>(naiveEstimator(quadParamsPtr))),
@@ -414,6 +424,7 @@ class naievePDController : public quadControllerTemplate
         VCBaseMat(Eigen::Matrix4d::Zero())
         {updateVCBaseMat();}
 
+    
     void updateVCBaseMat()
     {
         /*
