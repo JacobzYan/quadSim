@@ -28,13 +28,6 @@ struct controllerDemands
 };
 
 const static int nStates_ = 15, nDynSensor=6;
-// struct stateVector // Should probably redo this to just be the vector
-// {
-//     Eigen::Vector<double, nStates_> stateVector;
-
-// };
-
-
 struct trajectory
 {
     double dt;
@@ -131,6 +124,10 @@ class trajectoryControllerTemplate
 
     public:
         // Explicitly set kp and kd
+        /* 
+            @param m Quad Mass
+            @param g Acceleration due to gravity, OPTIONAL (default 9.81 m/s^2)
+        */
         trajectoryControllerTemplate(
                         const double m,
                         const double g=9.81
@@ -145,6 +142,15 @@ class trajectoryControllerTemplate
         void mg(const double m, const double g) {m_=m; g_=g; gVector[2]=m_*g_;}
 
     // Calculate control law response
+    /* 
+        @param x Quad estimated position in world frame
+        @param xDot Quad estimated velocity in world frame
+        @param xDes Quad desired position in world frame
+        @param RBI Quad current orientation in world frame
+        @param xDotDes Quad desired velocity in world frame
+        @param xDotDotDes Quad desired acceleration in world frame (feed forward)
+
+    */
     const trajectoryControllerPacket response(
                                     const Eigen::Vector3d & x,
                                     const Eigen::Vector3d & xDot, 
@@ -173,6 +179,14 @@ class PDTrajectoryController : public trajectoryControllerTemplate
 
     public:
         // Explicitly set kp and kd
+        /*
+        @todo Evaluate if kp and kd can just be stored by value
+        @param kpPtr Pointer to the proportional gain of the controller
+        @param kdPtr Pointer to the derivative gain
+        @param m Quad Mass
+        @param g Acceleration due to gravity, OPTIONAL (default 9.81 m/s^2)
+        
+        */
         PDTrajectoryController(
                         std::shared_ptr<double> kpPtr, 
                         std::shared_ptr<double> kdPtr,
@@ -371,20 +385,23 @@ class quadControllerTemplate
 {
     protected:
         // These not needed?
-        // stateEstimator estimator_;
-        std::shared_ptr<trajectoryControllerTemplate> trajCon_;
-        std::shared_ptr<attitudeControllerTemplate> attCon_;
-        std::vector<std::shared_ptr<sensorTemplate>> sensors_;
+        std::shared_ptr<trajectoryControllerTemplate> trajCtrlPtr_; 
+        std::shared_ptr<attitudeControllerTemplate> attCtrlPtr_; 
+        std::shared_ptr<stateEstimatorTemplate> estPtr_; 
+    
+        // std::vector<std::shared_ptr<sensorTemplate>> sensors_; // This info should be accessible in the paramsPtr_
         std::shared_ptr<quadParams> paramsPtr_;
         
         public:
         quadControllerTemplate
         (
             std::shared_ptr<trajectoryControllerTemplate> trajCon, 
-            std::shared_ptr<attitudeControllerTemplate> attCon
+            std::shared_ptr<attitudeControllerTemplate> attCon,
+            std::shared_ptr<stateEstimatorTemplate> estCon
         ):
-            trajCon_(trajCon), 
-            attCon_(attCon){}
+            trajCtrlPtr_(trajCon), 
+            attCtrlPtr_(attCon),
+            estPtr_(estCon){}
 
         // 
         virtual controllerDemands getDemands(quadState state, trajectory traj);
@@ -400,9 +417,6 @@ class naievePDController : public quadControllerTemplate
         static constexpr double eaMax = 12; // Later this should be a quad parameter
     public:
 
-    std::shared_ptr<PDTrajectoryController> trajCtrlPtr_; // Remove these, keep them in the base class so can always be referenced
-    std::shared_ptr<PDAttitudeController> attCtrlPtr_; // Remove these, keep them in the base class so can always be referenced
-    std::shared_ptr<stateEstimatorTemplate> estPtr_; // Remove these, keep them in the base class so can always be referenced
     double placholderTrajKp = 1;
     double placeholderTrajKd = 1;
 
@@ -414,13 +428,10 @@ class naievePDController : public quadControllerTemplate
         std::shared_ptr<quadParams> quadParamsPtr,
         const double trajKp=1,
         const double trajKd=1,
-        const Eigen::Vector3d placeholderAttKp = Eigen::Vector3d::Ones(),
-        const Eigen::Vector3d placeholderAttKd = Eigen::Vector3d::Ones()
+        const Eigen::Vector3d attKp = Eigen::Vector3d::Ones(),
+        const Eigen::Vector3d attKd = Eigen::Vector3d::Ones()
     ): 
-        trajCtrlPtr_(std::make_shared<PDTrajectoryController>(std::make_shared<double>(placholderTrajKp), std::make_shared<double>(placeholderTrajKd), 1, 9.81)), // Placeholder mass, gravity values
-        attCtrlPtr_(std::make_shared<PDAttitudeController>(std::make_shared<Eigen::Vector3d>(placeholderAttKp), std::make_shared<Eigen::Vector3d>(placeholderAttKd), 1, 9.81)),
-        estPtr_(std::make_shared<stateEstimatorTemplate>(naiveEstimator(quadParamsPtr))),
-        quadControllerTemplate(trajCtrlPtr_, attCtrlPtr_),
+        quadControllerTemplate(std::make_shared<PDTrajectoryController>(new PDTrajectoryController(std::make_shared<double>(trajKp), std::make_shared<double>(trajKd),quadParamsPtr->m())), attCtrlPtr_, estPtr_),
         VCBaseMat(Eigen::Matrix4d::Zero())
         {updateVCBaseMat();}
 
