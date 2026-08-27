@@ -38,7 +38,7 @@ struct trajectory
 };
 
 // Read in type of controller from the data only
-std::shared_ptr<quadControllerTemplate> readController(const std::string & line)
+auto readController(const std::string & line)
 {
     // Controller Names
     std::array<std::string, 1> controllerNames = {"naievePD"};
@@ -97,10 +97,11 @@ std::shared_ptr<quadControllerTemplate> readController(const std::string & line)
             case 0: // naieve PD Controller
                 // Construct PD controller here - pass the rest of the iss as data for the controller?
                 // naievePDController foo(processingLine);
-                return std::make_shared<quadControllerTemplate>(new naievePDController(processingLine));
+                return naievePDController(processingLine);
                 break;
 
             default:
+                return PDAttitudeController();
                 break;
         }
     }
@@ -135,6 +136,9 @@ class trajectoryControllerTemplate
                         : g_(g), m_(m) {gVector << 0,0,m*g;}
 
         // Getters
+        const double m() const {return m_;}
+        const double g() const {return g_;}
+
 
         // Setters
         void m(const double m) {m_=m; gVector[2]=m_*g_;}
@@ -224,8 +228,6 @@ class attitudeControllerTemplate
 {
         protected:
         // Controller variables - pointers to allow easy modification of change in gains to flow down
-        double m_;
-        double g_;
         std::shared_ptr<quadParams> paramsPtr_;
 
         // Helper Variables
@@ -235,28 +237,30 @@ class attitudeControllerTemplate
 
     public:
     // Explicitly set kp and kd
-        attitudeControllerTemplate(
-                        const double m,
-                        const double g=9.81
-                        )
-                        : g_(g), m_(m) {}
+        /*
+        @param kpPtr pointer to a 3d vector of propritional gains
+        @param kdPtr pointer to a 3d vector of derivative gains
+        @param paramsPtr pointer to the quadParams referenced
+        */
+        attitudeControllerTemplate(std::shared_ptr<quadParams> paramsPtr): paramsPtr_(paramsPtr) {}
 
         // Calculate control law response
+        /*
+        @param RBI rotation matrix of quad body
+        @param FDes Desired Force Vector
+        @param yawDes Desired angle of the x axis of the quad body in radians
+        */
         const Eigen::Vector3d & response(
                                         const Eigen::Matrix3d & RBI,
-                                        const Eigen::Vector3d & xDes, 
-                                        const Eigen::Vector3d & zDes, 
-                                        const Eigen::Vector3d & omegaB,
-                                        const Eigen::Matrix3d & JB
+                                        const Eigen::Vector3d & FDes, 
+                                        const Eigen::Vector3d & yawDes
                                         );
 };
 
 class PDAttitudeController : public attitudeControllerTemplate
 {
         private:
-        // Controller variables - pointers to allow easy modification of change in gains to flow down
-        std::shared_ptr<Eigen::Vector3d> kpPtr_;
-        std::shared_ptr<Eigen::Vector3d> kdPtr_;
+        
         double m_;
         double g_;
         std::shared_ptr<quadParams> paramsPtr_;
@@ -270,16 +274,19 @@ class PDAttitudeController : public attitudeControllerTemplate
         Eigen::Matrix3d RErr =Eigen::Matrix3d::Zero();
         Eigen::Vector3d AAErr = Eigen::Vector3d::Zero();
 
+        std::shared_ptr<Eigen::Vector3d> kpPtr_, kdPtr_;
+
 
     public:
     // Explicitly set kp and kd
         PDAttitudeController(
+                        const quadParams & params,
                         std::shared_ptr<Eigen::Vector3d> kpPtr, 
                         std::shared_ptr<Eigen::Vector3d> kdPtr,
                         const double m,
                         const double g=9.81
                         )
-                        : attitudeControllerTemplate(m, g), kpPtr_(kpPtr), kdPtr_(kdPtr), g_(g), m_(m) {AAErr << 0,0,0;}
+                        : attitudeControllerTemplate(std::make_shared<quadParams>(params)), kpPtr_(kpPtr), kdPtr_(kdPtr), g_(g), m_(m) {AAErr << 0,0,0;}
 
         // Getters
         const Eigen::Vector3d kp() const {return * kpPtr_ ;}
