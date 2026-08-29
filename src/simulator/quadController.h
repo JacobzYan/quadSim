@@ -37,75 +37,7 @@ struct trajectory
     std::vector<double> heading;
 };
 
-// Read in type of controller from the data only
-auto readController(const std::string & line)
-{
-    // Controller Names
-    std::array<std::string, 1> controllerNames = {"naievePD"};
 
-    // Temp helper variables
-    std::string varName, varValue, controllerName, packet;
-    int delimiterLocation, controllerIndex;
-
-    // Process line
-    std::string processingLine = line;
-    cutWhitespace(processingLine);
-
-    // Seperate out prop parameters with semicolon delimeters
-    replaceDelimiters(processingLine,';');
-    std::istringstream iss(processingLine);
-
-    
-    while(iss >> packet)
-    {
-        // Seperate out prop parameters
-        delimiterLocation = packet.find("=");
-        varName = packet.substr(0,delimiterLocation);
-        varValue = packet.substr(delimiterLocation+1, packet.size()-delimiterLocation-1);
-
-        // Trim all whitespace
-        cutWhitespace(varName);
-
-        // Ensure there is an equals sign
-        if(delimiterLocation==std::string::npos)
-        {
-            std::cout << "THIS PACKET CONTAINS NO EQUALS SIGN DELIMITER:" << std::endl << packet << std::endl;
-            continue;
-        }
-
-        // Check if this packet has the controller type
-        controllerIndex = -1;
-        for(int i=0;i<controllerNames.size();i++)
-        {
-            if(controllerNames[i] == varName)
-            {
-                controllerIndex = i;
-                break;
-            }
-        }
-
-        // Skip to future packets if type is not here
-        if(controllerIndex==-1)
-        {
-            continue;
-        }
-
-
-        // Assign the appropriate controller constructor
-        switch(controllerIndex)
-        {
-            case 0: // naieve PD Controller
-                // Construct PD controller here - pass the rest of the iss as data for the controller?
-                // naievePDController foo(processingLine);
-                return naievePDController(processingLine);
-                break;
-
-            default:
-                return PDAttitudeController();
-                break;
-        }
-    }
-}
 
 
 // Trajectory Controllers
@@ -388,6 +320,7 @@ class naiveEstimator : public stateEstimatorTemplate // WIP
 
 
 // Controllers
+enum controllerTypes {UnknownController, naievePDControllerType};
 class quadControllerTemplate
 {
     protected:
@@ -400,6 +333,7 @@ class quadControllerTemplate
         std::shared_ptr<quadParams> paramsPtr_;
         
         public:
+        quadControllerTemplate();
         quadControllerTemplate
         (
             std::shared_ptr<trajectoryControllerTemplate> trajCon, 
@@ -409,26 +343,52 @@ class quadControllerTemplate
             trajCtrlPtr_(trajCon), 
             attCtrlPtr_(attCon),
             estPtr_(estCon){}
-
-        // 
+        quadControllerTemplate();
+        // Virtual Functions
         virtual controllerDemands getDemands(quadState state, trajectory traj);
         virtual void getVoltages(Eigen::Vector4d* motorVoltages, const Eigen::Vector3d & NDemand, const double FDemand);
         virtual void getState(enviornment env, quadState & state);
+        virtual void updateParams();
 };
 
-class naievePDController : public quadControllerTemplate
+class naievePDController : public quadControllerTemplate // Transistion to having the whole controller be uninherited?
 {
     private:
         Eigen::Matrix4d VCBaseMat;
         double VCFMax;
         static constexpr double eaMax = 12; // Later this should be a quad parameter
-    public:
+        inline static const std::array<std::string, 5> varNames = {"name", "trajKp", "trajKd", "attKp", "attKd"};
+
+        std::string name_;
+        std::shared_ptr<PDTrajectoryController> trajCtrlPtr_; 
+        std::shared_ptr<PDAttitudeController> attCtrlPtr_; 
+        std::shared_ptr<naiveEstimator> estPtr_; 
+    
+        public:
 
     double placholderTrajKp = 1;
     double placeholderTrajKd = 1;
 
+
+    // Getters and setters
+    const std::string name() const {return name_;}
+    const double trajKp() const {return trajCtrlPtr_->kp();}
+    const double trajKd() const {return trajCtrlPtr_->kd();}
+    const Eigen::Vector3d attKp() const {return attCtrlPtr_->kp();}
+    const Eigen::Vector3d attKd() const {return attCtrlPtr_->kd();}
+
+    void name(const std::string & name){name_=name;}
+    void trajKp(const double & trajKp){trajCtrlPtr_->kp(trajKp);}
+    void trajKd(const double & trajKd){trajCtrlPtr_->kd(trajKd);}
+    void attKp(const Eigen::Vector3d & attKp){attCtrlPtr_->kp(attKp);}
+    void attKd(const Eigen::Vector3d & attKd){attCtrlPtr_->kd(attKd);}
+
+    
+
     Eigen::Vector3d placeholderAttKp = Eigen::Vector3d::Ones();
     Eigen::Vector3d placeholderAttKd = Eigen::Vector3d::Ones();
+    
+
 
     naievePDController
     (
@@ -442,6 +402,78 @@ class naievePDController : public quadControllerTemplate
         VCBaseMat(Eigen::Matrix4d::Zero())
         {updateVCBaseMat();}
 
+    naievePDController(const std::string & line): quadControllerTemplate()
+    {
+        // Temp helper variables
+        std::string varName;
+        std::string varValue; 
+        int delimiterLocation;
+        int varIndex;
+
+        // Process line
+        std::string processingLine = line;
+        cutWhitespace(processingLine);
+
+        // Seperate out controller parameters with semicolon delimeters
+        replaceDelimiters(processingLine,';');
+        std::istringstream iss(processingLine);
+
+        std::string packet;
+        while(iss >> packet)
+        {
+            // Seperate out controller parameters
+            delimiterLocation = packet.find("=");
+            varName = packet.substr(0,delimiterLocation);
+            varValue = packet.substr(delimiterLocation+1, packet.size()-delimiterLocation-1);
+
+            // Trim all whitespace
+            cutWhitespace(varName);
+
+            // Ensure there is an equals sign
+            if(delimiterLocation==std::string::npos)
+            {
+                std::cout << "THIS PACKET CONTAINS NO EQUALS SIGN DELIMITER:" << std::endl << packet << std::endl;
+                continue;
+            }
+
+            // Check if line start matches any variable names
+            varIndex = -1;
+            for(int i=0;i<varNames.size();i++)
+            {
+                if(varNames[i] == varName)
+                {
+                    varIndex = i;
+                    break;
+                }
+            }
+
+            // Trim Whitespace for name, cut all whitespace for others
+            if(varIndex==7){trim(varValue);} // Name - preserve internal spaces
+            else{cutWhitespace(varValue);}
+
+            // Assign the appropriate value
+            switch(varIndex)
+            {
+                case 0: // name
+                    name(varValue);
+                    break;
+                case 1: // trajKp
+                    trajKp(std::stod(varValue));
+                    break;
+                case 2: // trajKd
+                    trajKd(std::stod(varValue));
+                    break;
+                case 3: // attKp
+                    attKp(splitVector3d(varValue, ','));
+                    break;
+                case 4: // attKd
+                    attKd(splitVector3d(varValue, ','));
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
     
     void updateVCBaseMat()
     {
@@ -511,3 +543,73 @@ class naievePDController : public quadControllerTemplate
         
 };
 
+
+// Read in type of controller from the data only
+controllerTypes readControllerType(const std::string & line)
+{
+    // Controller Names
+    std::array<std::string, 1> controllerNames = {"naievePD"};
+
+    // Temp helper variables
+    std::string varName, varValue, controllerName, packet;
+    int delimiterLocation, controllerIndex;
+
+    // Process line
+    std::string processingLine = line;
+    cutWhitespace(processingLine);
+
+    // Seperate out prop parameters with semicolon delimeters
+    replaceDelimiters(processingLine,';');
+    std::istringstream iss(processingLine);
+
+    
+    while(iss >> packet)
+    {
+        // Seperate out prop parameters
+        delimiterLocation = packet.find("=");
+        varName = packet.substr(0,delimiterLocation);
+        varValue = packet.substr(delimiterLocation+1, packet.size()-delimiterLocation-1);
+
+        // Trim all whitespace
+        cutWhitespace(varName);
+
+        // Ensure there is an equals sign
+        if(delimiterLocation==std::string::npos)
+        {
+            std::cout << "THIS PACKET CONTAINS NO EQUALS SIGN DELIMITER:" << std::endl << packet << std::endl;
+            continue;
+        }
+
+        // Check if this packet has the controller type
+        controllerIndex = -1;
+        for(int i=0;i<controllerNames.size();i++)
+        {
+            if(controllerNames[i] == varName)
+            {
+                controllerIndex = i;
+                break;
+            }
+        }
+
+        // Skip to future packets if type is not here
+        if(controllerIndex==-1)
+        {
+            continue;
+        }
+
+
+        // Assign the appropriate controller constructor
+        switch(controllerIndex)
+        {
+            case 0: // naieve PD Controller
+                // Construct PD controller here - pass the rest of the iss as data for the controller?
+                // naievePDController foo(processingLine);
+                return naievePDControllerType;
+                break;
+
+            default:
+                return UnknownController;
+                break;
+        }
+    }
+}
