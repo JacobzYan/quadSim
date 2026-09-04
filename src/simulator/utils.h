@@ -7,7 +7,7 @@
 
 
 // Strips out all whitespace from a variable inplace
-void cutWhitespace(std::string& str) {
+inline void cutWhitespace(std::string& str) {
     std::string result;
     result.reserve(str.size());  // Avoid reallocations
     
@@ -22,7 +22,7 @@ void cutWhitespace(std::string& str) {
 
 
 // Cuts whitespace from the beginning and end of a string inplace
-void trim(std::string &str)
+inline void trim(std::string &str)
 {
     const char* whitespace = " \t\n\r\f\v";
 
@@ -32,7 +32,7 @@ void trim(std::string &str)
 
 
 // Replaces all instances of a delimiter in a string with a space, Returns the number of delimiters that were replaced
-int replaceDelimiters(std::string & str, const char & delimiter)
+inline int replaceDelimiters(std::string & str, const char & delimiter)
 {
     int nReplaced = 0;
     cutWhitespace(str);
@@ -48,7 +48,7 @@ int replaceDelimiters(std::string & str, const char & delimiter)
 
 
 // Takes a string with numbers seperated by commas, and  returns an eigen vector3d
-const Eigen::Vector3d splitVector3d(const std::string & line, const char delimiter)
+inline const Eigen::Vector3d splitVector3d(const std::string & line, const char delimiter)
 {
     double vectorData[3];
     int assignmentIndex = 0;
@@ -72,7 +72,7 @@ const Eigen::Vector3d splitVector3d(const std::string & line, const char delimit
 
 
 // Takes a string with numbers seperated by commas, and  returns an eigen matrix3d
-const Eigen::Matrix3d splitMatrix3d(const std::string & line, const char delimiter)
+inline const Eigen::Matrix3d splitMatrix3d(const std::string & line, const char delimiter)
 {
     double vectorData[9];
     int assignmentIndex = 0;
@@ -97,7 +97,7 @@ const Eigen::Matrix3d splitMatrix3d(const std::string & line, const char delimit
 
 
 // Concatenates a string to itself n times
-std::string repeatStr(const std::string & str, const int n)
+inline std::string repeatStr(const std::string & str, const int n)
 {
     std::string output = "";
     for(int i=0;i<n;i++){output += str;}
@@ -106,7 +106,7 @@ std::string repeatStr(const std::string & str, const int n)
 
 
 // IMPLEMENT LATER
-Eigen::Vector4d AA2Quat(const Eigen::Vector3d & axis, const double angle) // Converts axis angle representation to a quaternion
+inline Eigen::Vector4d AA2Quat(const Eigen::Vector3d & axis, const double angle) // Converts axis angle representation to a quaternion
 {
     return Eigen::Vector4d::Zero();
 }

@@ -44,15 +44,17 @@ struct trajectory
 class trajectoryControllerTemplate
 {
     protected:
-        // Controller variables - pointers to allow easy modification of change in gains to flow down
+        // Controller variables
         double m_;
         double g_;
-        std::shared_ptr<quadParams> paramsPtr_;
+        Eigen::Vector3d ZDesVector_;
+        double FDes_;
 
         // Helper Variables
-        Eigen::Vector3d gVector;
-        Eigen::Vector3d FDesVec;
-        trajectoryControllerPacket response_;
+        Eigen::Vector3d FDesVector_;
+        Eigen::Vector3d gVector_;
+        
+        
         
 
     public:
@@ -62,89 +64,83 @@ class trajectoryControllerTemplate
             @param g Acceleration due to gravity, OPTIONAL (default 9.81 m/s^2)
         */
         trajectoryControllerTemplate(
-                        const double m,
-                        const double g=9.81
-                        )
-                        : g_(g), m_(m) {gVector << 0,0,m*g;}
+            const double m,
+            const double g=9.81
+            )
+            : g_(g), m_(m) {gVector_ << 0,0,m*g;}
 
         // Getters
         const double m() const {return m_;}
         const double g() const {return g_;}
-
+        const Eigen::Vector3d gVector()    const {return gVector_;}
+        // const Eigen::Vector3d FDesVector() const {return FDesVector_;}
+        const Eigen::Vector3d Zdes() const {return ZDesVector_;}
+        const double Fdes_() const {return FDes_;}
 
         // Setters
-        void m(const double m) {m_=m; gVector[2]=m_*g_;}
-        void g(const double g) {g_=g; gVector[2]=g_*g_;}
-        void mg(const double m, const double g) {m_=m; g_=g; gVector[2]=m_*g_;}
+        void m(const double m) {m_=m; gVector_[2]=m_*g_;}
+        void g(const double g) {g_=g; gVector_[2]=m_*g_;}
+        void mg(const double m, const double g) {m_=m; g_=g; gVector_[2]=m_*g_;}
 
-    // Calculate control law response
-    /* 
-        @param x Quad estimated position in world frame
-        @param xDot Quad estimated velocity in world frame
-        @param xDes Quad desired position in world frame
-        @param RBI Quad current orientation in world frame
-        @param xDotDes Quad desired velocity in world frame
-        @param xDotDotDes Quad desired acceleration in world frame (feed forward)
+        // Calculate control law response
+        /* 
+            @param x Quad estimated position in world frame
+            @param xDot Quad estimated velocity in world frame
+            @param xDes Quad desired position in world frame
+            @param RBI Quad current orientation in world frame
+            @param xDotDes Quad desired velocity in world frame
+            @param xDotDotDes Quad desired acceleration in world frame (feed forward)
 
-    */
-    const trajectoryControllerPacket response(
-                                    const Eigen::Vector3d & x,
-                                    const Eigen::Vector3d & xDot, 
-                                    const Eigen::Vector3d & xDes, 
-                                    const Eigen::Matrix3d & RBI,
-                                    const Eigen::Vector3d & xDotDes = Eigen::Vector3d::Zero(),                                       
-                                    const Eigen::Vector3d & xDotDotDes = Eigen::Vector3d::Zero()
-                                    );
+        */
+        virtual void response(
+            const Eigen::Vector3d & x,
+            const Eigen::Vector3d & xDot, 
+            const Eigen::Vector3d & xDes, 
+            const Eigen::Matrix3d & RBI,
+            const Eigen::Vector3d & xDotDes = Eigen::Vector3d::Zero(),                                       
+            const Eigen::Vector3d & xDotDotDes = Eigen::Vector3d::Zero()
+            ) const;
 };
 
 class PDTrajectoryController : public trajectoryControllerTemplate
 {
     private:
-        // Controller variables - pointers to allow easy modification of change in gains to flow down
-        std::shared_ptr<double> kpPtr_;
-        std::shared_ptr<double> kdPtr_;
-        double m_;
-        double g_;
-        std::shared_ptr<quadParams> paramsPtr_;
-        // Helper Variables
-        Eigen::Vector3d gVector;
-        Eigen::Vector3d FDesVec;
+        // Controller variables - m, g inherited from template
+        double kp_;
+        double kd_;
+        
+        // Helper Variables - gVector, FDesVector inherited from template
         Eigen::Vector3d normalizeFDesZ;
-        trajectoryControllerPacket response_;
         
 
     public:
         // Explicitly set kp and kd
         /*
-        @todo Evaluate if kp and kd can just be stored by value
-        @param kpPtr Pointer to the proportional gain of the controller
-        @param kdPtr Pointer to the derivative gain
-        @param m Quad Mass
-        @param g Acceleration due to gravity, OPTIONAL (default 9.81 m/s^2)
-        
+            @param kpPtr Pointer to the proportional gain of the controller
+            @param kdPtr Pointer to the derivative gain
+            @param m Quad Mass
+            @param g Acceleration due to gravity, OPTIONAL (default 9.81 m/s^2)
         */
         PDTrajectoryController(
-                        std::shared_ptr<double> kpPtr, 
-                        std::shared_ptr<double> kdPtr,
+                        double kp, 
+                        double kd,
                         const double m,
                         const double g=9.81
                         
                         )
-                        : trajectoryControllerTemplate(m, g), kpPtr_(kpPtr), kdPtr_(kdPtr), g_(g), m_(m) {gVector << 0,0,m*g; normalizeFDesZ << 0,0,1;}
+                        : trajectoryControllerTemplate(m, g), kp_(kp), kd_(kd)  {normalizeFDesZ << 0,0,1;}
 
         // Getters
-        const double kp() const {return * kpPtr_ ;}
-        const double kd() const {return * kdPtr_ ;}
+        const double kp() const {return kp_ ;}
+        const double kd() const {return kd_ ;}
 
         // Setters
-        void kp(const double kp) {* kpPtr_ = kp;}
-        void kd(const double kd) {* kdPtr_ = kd;}
-        void m(const double m) {m_=m; gVector[2]=m_*g_;}
-        void g(const double g) {g_=g; gVector[2]=g_*g_;}
-        void mg(const double m, const double g) {m_=m; g_=g; gVector[2]=m_*g_;}
+        void kp(const double kp) {kp_ = kp;}
+        void kd(const double kd) {kd_ = kd;}
+
 
     // Calculate control law response
-    const trajectoryControllerPacket response(
+    void response(
                                     const Eigen::Vector3d & x,
                                     const Eigen::Vector3d & xDot, 
                                     const Eigen::Vector3d & xDes, 
@@ -159,8 +155,6 @@ class PDTrajectoryController : public trajectoryControllerTemplate
 class attitudeControllerTemplate
 {
         protected:
-        // Controller variables - pointers to allow easy modification of change in gains to flow down
-        std::shared_ptr<quadParams> paramsPtr_;
 
         // Helper Variables
         Eigen::Vector3d FIDes;
@@ -172,9 +166,8 @@ class attitudeControllerTemplate
         /*
         @param kpPtr pointer to a 3d vector of propritional gains
         @param kdPtr pointer to a 3d vector of derivative gains
-        @param paramsPtr pointer to the quadParams referenced
         */
-        attitudeControllerTemplate(std::shared_ptr<quadParams> paramsPtr): paramsPtr_(paramsPtr) {}
+        attitudeControllerTemplate(){}
 
         // Calculate control law response
         /*
@@ -182,7 +175,7 @@ class attitudeControllerTemplate
         @param FDes Desired Force Vector
         @param yawDes Desired angle of the x axis of the quad body in radians
         */
-        const Eigen::Vector3d & response(
+        virtual const Eigen::Vector3d & response(
                                         const Eigen::Matrix3d & RBI,
                                         const Eigen::Vector3d & FDes, 
                                         const Eigen::Vector3d & yawDes
@@ -193,9 +186,7 @@ class PDAttitudeController : public attitudeControllerTemplate
 {
         private:
         
-        double m_;
-        double g_;
-        std::shared_ptr<quadParams> paramsPtr_;
+
         // Helper Variables
         Eigen::Vector3d FIDes;
         Eigen::Vector3d FFGravity;
@@ -212,13 +203,10 @@ class PDAttitudeController : public attitudeControllerTemplate
     public:
     // Explicitly set kp and kd
         PDAttitudeController(
-                        const quadParams & params,
                         std::shared_ptr<Eigen::Vector3d> kpPtr, 
-                        std::shared_ptr<Eigen::Vector3d> kdPtr,
-                        const double m,
-                        const double g=9.81
+                        std::shared_ptr<Eigen::Vector3d> kdPtr
                         )
-                        : attitudeControllerTemplate(std::make_shared<quadParams>(params)), kpPtr_(kpPtr), kdPtr_(kdPtr), g_(g), m_(m) {AAErr << 0,0,0;}
+                        : attitudeControllerTemplate(), kpPtr_(kpPtr), kdPtr_(kdPtr) {AAErr << 0,0,0;}
 
         // Getters
         const Eigen::Vector3d kp() const {return * kpPtr_ ;}
@@ -244,11 +232,6 @@ class stateEstimatorTemplate
 {
     protected:
         
-        // Reference Info storage
-        std::shared_ptr<quadParams> paramsPtr_;
-        std::shared_ptr<enviornment> env_Ptr;
-        
-        
 
     public:
 
@@ -257,7 +240,7 @@ class stateEstimatorTemplate
         quadState::stateVector estState_; 
 
         // Constructors
-        stateEstimatorTemplate(std::shared_ptr<quadParams> paramsPtr): paramsPtr_(paramsPtr), estState_(estStateMemory.data())
+        stateEstimatorTemplate(std::shared_ptr<quadParams> paramsPtr): estState_(estStateMemory.data())
         {
             
         }
@@ -320,7 +303,7 @@ class naiveEstimator : public stateEstimatorTemplate // WIP
 
 
 // Controllers
-enum controllerTypes {UnknownController, naievePDControllerType};
+
 class quadControllerTemplate
 {
     protected:
@@ -333,7 +316,7 @@ class quadControllerTemplate
         std::shared_ptr<quadParams> paramsPtr_;
         
         public:
-        quadControllerTemplate();
+        quadControllerTemplate(){}
         quadControllerTemplate
         (
             std::shared_ptr<trajectoryControllerTemplate> trajCon, 
@@ -343,7 +326,7 @@ class quadControllerTemplate
             trajCtrlPtr_(trajCon), 
             attCtrlPtr_(attCon),
             estPtr_(estCon){}
-        quadControllerTemplate();
+
         // Virtual Functions
         virtual controllerDemands getDemands(quadState state, trajectory traj);
         virtual void getVoltages(Eigen::Vector4d* motorVoltages, const Eigen::Vector3d & NDemand, const double FDemand);
@@ -388,27 +371,48 @@ class naievePDController : public quadControllerTemplate // Transistion to havin
     Eigen::Vector3d placeholderAttKp = Eigen::Vector3d::Ones();
     Eigen::Vector3d placeholderAttKd = Eigen::Vector3d::Ones();
     
-
-
     naievePDController
     (
-        std::shared_ptr<quadParams> quadParamsPtr,
-        const double trajKp=1,
-        const double trajKd=1,
-        const Eigen::Vector3d attKp = Eigen::Vector3d::Ones(),
-        const Eigen::Vector3d attKd = Eigen::Vector3d::Ones()
+        const std::string name,
+        const std::shared_ptr<PDTrajectoryController> trajCtrlPtr,
+        const std::shared_ptr<PDAttitudeController> attCtrlPtr,
+        const std::shared_ptr<naiveEstimator> estPtr
     ): 
-        quadControllerTemplate(std::make_shared<PDTrajectoryController>(new PDTrajectoryController(std::make_shared<double>(trajKp), std::make_shared<double>(trajKd),quadParamsPtr->m())), attCtrlPtr_, estPtr_),
-        VCBaseMat(Eigen::Matrix4d::Zero())
-        {updateVCBaseMat();}
+    // naievePDController
+    //     (
+    //         std::static_pointer_cast<trajectoryControllerTemplate>(trajCtrlPtr),
+    //         std::static_pointer_cast<attitudeControllerTemplate>(attCtrlPtr),
+    //         std::static_pointer_cast<stateEstimatorTemplate>(estPtr)
+    //     ), 
+    name_(name), trajCtrlPtr_(trajCtrlPtr), attCtrlPtr_(attCtrlPtr), estPtr_(estPtr)
+    {}
 
-    naievePDController(const std::string & line): quadControllerTemplate()
+
+    // Use simpler constructors and factory functions
+    // naievePDController
+    // (
+    //     std::shared_ptr<quadParams> quadParamsPtr,
+    //     const double trajKp=1,
+    //     const double trajKd=1,
+    //     const Eigen::Vector3d attKp = Eigen::Vector3d::Ones(),
+    //     const Eigen::Vector3d attKd = Eigen::Vector3d::Ones()
+    // ): 
+    //     quadControllerTemplate(std::make_shared<PDTrajectoryController>(new PDTrajectoryController(trajKp, trajKd,quadParamsPtr->m())), attCtrlPtr_, estPtr_),
+    //     VCBaseMat(Eigen::Matrix4d::Zero())
+    //     {updateVCBaseMat();}
+
+    static naievePDController strLineConstructor(const std::string & line, const quadParams params)
     {
         // Temp helper variables
         std::string varName;
         std::string varValue; 
+        std::string packet;
         int delimiterLocation;
         int varIndex;
+        // Data storage
+        std::string name = "NA";
+        double trajKp, trajKd = 0;
+        Eigen::Vector3d attKp, attKd = Eigen::Vector3d::Zero();
 
         // Process line
         std::string processingLine = line;
@@ -418,7 +422,7 @@ class naievePDController : public quadControllerTemplate // Transistion to havin
         replaceDelimiters(processingLine,';');
         std::istringstream iss(processingLine);
 
-        std::string packet;
+        
         while(iss >> packet)
         {
             // Seperate out controller parameters
@@ -455,24 +459,31 @@ class naievePDController : public quadControllerTemplate // Transistion to havin
             switch(varIndex)
             {
                 case 0: // name
-                    name(varValue);
+                    name = varValue;
                     break;
                 case 1: // trajKp
-                    trajKp(std::stod(varValue));
+                    trajKp = std::stod(varValue);
                     break;
                 case 2: // trajKd
-                    trajKd(std::stod(varValue));
+                    trajKd = std::stod(varValue);
                     break;
                 case 3: // attKp
-                    attKp(splitVector3d(varValue, ','));
+                    attKp = splitVector3d(varValue, ',');
                     break;
                 case 4: // attKd
-                    attKd(splitVector3d(varValue, ','));
+                    attKd = splitVector3d(varValue, ',');
                     break;
                 default:
                     break;
             }
         }
+        
+        PDTrajectoryController trajCon(trajKp, trajKd, params.m());
+        PDAttitudeController attCon(std::make_shared<Eigen::Vector3d>(attKp), std::make_shared<Eigen::Vector3d>(attKd));
+        naiveEstimator Estimator(std::make_shared<quadParams>(params));
+
+
+        return naievePDController(name, std::make_shared<PDTrajectoryController>(trajCon),std::make_shared<PDAttitudeController>(attCon), std::make_shared<naiveEstimator>(Estimator));
     }
     
     void updateVCBaseMat()
@@ -598,7 +609,7 @@ controllerTypes readControllerType(const std::string & line)
         }
 
 
-        // Assign the appropriate controller constructor
+        // Return the appropriate controller constructor
         switch(controllerIndex)
         {
             case 0: // naieve PD Controller
@@ -608,8 +619,10 @@ controllerTypes readControllerType(const std::string & line)
                 break;
 
             default:
-                return UnknownController;
                 break;
         }
     }
+    
+    // Default case
+    return UnknownController;
 }

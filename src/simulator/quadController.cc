@@ -28,7 +28,7 @@
 
 
 
-const trajectoryControllerPacket PDTrajectoryController::response(
+void PDTrajectoryController::response(
                                     const Eigen::Vector3d & x,
                                     const Eigen::Vector3d & xDot, 
                                     const Eigen::Vector3d & xDes, 
@@ -38,10 +38,9 @@ const trajectoryControllerPacket PDTrajectoryController::response(
                                     )
     {
         // Control gains + Feed forward desired accel, gravity, normalize to extract the portion || to zRBI
-        FDesVec = (*kpPtr_*(x-xDes) + *kdPtr_*(xDot-xDotDes) - gVector + m_ * xDotDotDes);
-        response_.zBI = FDesVec.normalized();
-        response_.FDes = FDesVec.transpose() * RBI.transpose() * normalizeFDesZ;
-        return response_;
+        FDesVector_ = (kp_*(x-xDes) + kd_*(xDot-xDotDes) - gVector_ + m_ * xDotDotDes);
+        ZDesVector_ = FDesVector_.normalized();
+        FDes_= FDesVector_.transpose() * RBI.transpose() * normalizeFDesZ;
     }
 
 

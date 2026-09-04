@@ -14,6 +14,7 @@
 // Forward declare to avoid circular includes - quadParams just holds these in order to have a single source to reference from
 class sensorTemplate;
 class quadControllerTemplate;
+enum controllerTypes {UnknownController, naievePDControllerType};
 
 class quadParams
 {
@@ -49,6 +50,7 @@ private:
     std::shared_ptr<double> gPtr_ = std::make_shared<double>(g_);
     std::shared_ptr<double> mPtr_ = std::make_shared<double>(m_);
     std::shared_ptr<quadControllerTemplate> controller_;
+    controllerTypes controllerType_;
     
     // Sensor Params
     std::vector<const sensorTemplate*> sensors_; // Vector of pointers to sensor objects
