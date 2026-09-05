@@ -51,12 +51,12 @@ class droneState
         
         // Apply Getters/setters asVector blocks to work with the memory in stateAsVec_ directly instead of instantiating new variables - returning as const unnessecary because the return data is immutable
         // Getters
-        Eigen::VectorBlock<stateVector, 3> pos() {return stateAsVec_. template segment<3>(0);}
-        Eigen::VectorBlock<stateVector, 3> vel() {return stateAsVec_. template segment<3>(3);}
-        Eigen::Map<Eigen::Matrix3d> RBI() {return Eigen::Map< Eigen::Matrix3d>(stateAsVec_. template segment<9>(6).data());} // Use the same data by using Map
-        Eigen::VectorBlock<stateVector, 3> omegaB() {return stateAsVec_. template segment<3>(15);}
-        Eigen::VectorBlock<stateVector, nProps> propOmegaB() {return stateAsVec_. template segment<nProps>(18);}
-        stateVector & stateAsVec() {return stateAsVec_;}
+        Eigen::VectorBlock<stateVector, 3> pos() const {return stateAsVec_. template segment<3>(0);}
+        Eigen::VectorBlock<stateVector, 3> vel() const {return stateAsVec_. template segment<3>(3);}
+        Eigen::Map<Eigen::Matrix3d> RBI() const {return Eigen::Map< Eigen::Matrix3d>(stateAsVec_. template segment<9>(6).data());} // Use the same data by using Map
+        Eigen::VectorBlock<stateVector, 3> omegaB() const {return stateAsVec_. template segment<3>(15);}
+        Eigen::VectorBlock<stateVector, nProps> propOmegaB() const {return stateAsVec_. template segment<nProps>(18);}
+        stateVector & stateAsVec() const {return stateAsVec_;}
 
         // Setters
         void pos(const Eigen::Vector3d & pos){stateAsVec_.segment(0,3)=pos;}

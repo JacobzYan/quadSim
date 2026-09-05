@@ -8,6 +8,7 @@
 #include <fstream>
 
 #include "quadParams.h"
+#include "quadController.h"
 #include "poseModules.h"
 #include "sensors.h"
 #include "utils.h"
@@ -81,6 +82,19 @@ bool quadParams::readFile(std::string path)
                 case 7: addProp(new propParams(varValue)); break;
                 case 8: name(varValue); break;
                 case 9: addSensor(varValue); break;
+                case 10: // controller
+                    ControllerType t = readControllerType(varValue);
+                    switch (t)
+                    {
+                    case naievePDControllerType:
+                            setController(std::static_pointer_cast<quadControllerTemplate>(std::make_shared<naievePDControllerType>(naievePDController::strLineConstructor(varValue))));
+                        break;
+                    
+                    default:
+                        std::cout << "Assigning default gain naievePDController" << std::endl;
+                        break;
+                    }
+                    break;
                 default: std::cout << "Could not read line - variable name not recognized: " << line << std::endl;
             }
         }
@@ -280,7 +294,7 @@ propParams::propParams(const std::string & line)
             case 6: // tauM
                 tauM(std::stod(varValue));
                 break;
-            case 7:
+            case 7: // name
                 name(varValue);
                 break;
             default:
@@ -311,3 +325,74 @@ void propParams::printValues(int nTabs) const
 }
 
 
+// Read in type of controller from the data only
+ControllerType readControllerType(const std::string & line)
+{
+    // Controller Names
+    std::array<std::string, 1> controllerNames = {"naievePD"};
+
+    // Temp helper variables
+    std::string varName, varValue, controllerName, packet;
+    int delimiterLocation, controllerIndex;
+
+    // Process line
+    std::string processingLine = line;
+    cutWhitespace(processingLine);
+
+    // Seperate out prop parameters with semicolon delimeters
+    replaceDelimiters(processingLine,';');
+    std::istringstream iss(processingLine);
+
+    
+    while(iss >> packet)
+    {
+        // Seperate out prop parameters
+        delimiterLocation = packet.find("=");
+        varName = packet.substr(0,delimiterLocation);
+        varValue = packet.substr(delimiterLocation+1, packet.size()-delimiterLocation-1);
+
+        // Trim all whitespace
+        cutWhitespace(varName);
+
+        // Ensure there is an equals sign
+        if(delimiterLocation==std::string::npos)
+        {
+            std::cout << "THIS PACKET CONTAINS NO EQUALS SIGN DELIMITER:" << std::endl << packet << std::endl;
+            continue;
+        }
+
+        // Check if this packet has the controller type
+        controllerIndex = -1;
+        for(int i=0;i<controllerNames.size();i++)
+        {
+            if(controllerNames[i] == varName)
+            {
+                controllerIndex = i;
+                break;
+            }
+        }
+
+        // Skip to future packets if type is not here
+        if(controllerIndex==-1)
+        {
+            continue;
+        }
+
+
+        // Return the appropriate controller constructor
+        switch(controllerIndex)
+        {
+            case 0: // naieve PD Controller
+                // Construct PD controller here - pass the rest of the iss as data for the controller?
+                // naievePDController foo(processingLine);
+                return naievePDControllerType;
+                break;
+
+            default:
+                break;
+        }
+    }
+    
+    // Default case
+    return UnknownController;
+}

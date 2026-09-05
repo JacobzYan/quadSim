@@ -24,23 +24,25 @@
 
 #include "quadController.h"
 #include "quadParams.h"
+#include "quadState.h"
 
 
 
-
-void PDTrajectoryController::response(
-                                    const Eigen::Vector3d & x,
-                                    const Eigen::Vector3d & xDot, 
+trajCtrlPacket PDTrajectoryController::response(
+                                    const quadParams & params,
+                                    const quadState & state,
+                                    // const Eigen::Vector3d & x,
+                                    // const Eigen::Vector3d & xDot, 
                                     const Eigen::Vector3d & xDes, 
-                                    const Eigen::Matrix3d & RBI,
-                                    const Eigen::Vector3d & xDotDes,                                       
-                                    const Eigen::Vector3d & xDotDotDes
+                                    // const Eigen::Matrix3d & RBI,
+                                    const Eigen::Vector3d & xDotDes = Eigen::Vector3d::Zero(),                                       
+                                    const Eigen::Vector3d & xDotDotDes = Eigen::Vector3d::Zero()
                                     )
     {
         // Control gains + Feed forward desired accel, gravity, normalize to extract the portion || to zRBI
-        FDesVector_ = (kp_*(x-xDes) + kd_*(xDot-xDotDes) - gVector_ + m_ * xDotDotDes);
+        FDesVector_ = (kp_*(state.pos()-xDes) + kd_*(state.vel()-xDotDes) - Eigen::Vector3d(0,0,params.g() * params.m()));
         ZDesVector_ = FDesVector_.normalized();
-        FDes_= FDesVector_.transpose() * RBI.transpose() * normalizeFDesZ;
+        FDes_= FDesVector_.transpose() * state.RBI().transpose() * normalizeFDesZ;
     }
 
 
@@ -48,43 +50,31 @@ void PDTrajectoryController::response(
 
 
 const Eigen::Vector3d & PDAttitudeController::response(
-                                        const Eigen::Matrix3d & RBI,
-                                        const Eigen::Vector3d & xDes, 
-                                        const Eigen::Vector3d & zDes, 
-                                        const Eigen::Vector3d & omegaB,
-                                        const Eigen::Matrix3d & JB
+                                        const quadParams & params,
+                                        const quadState & state,
+                                        const trajCtrlPacket & trajCtrlOutput,  
+                                        const Eigen::Vector3d & yawDes
                                         )
         {
             // X, Y, Z axes of desired
-            RDes.row(2)= zDes;
-            RDes.row(1)= zDes.cross(xDes).normalized();
-            RDes.row(0)= RDes.row(1).cross(zDes);
+            RDes.row(2)= trajCtrlOutput.ZDesVector;
+            RDes.row(1)= trajCtrlOutput.ZDesVector.cross(yawDes).normalized();
+            RDes.row(0)= RDes.row(1).cross(trajCtrlOutput.ZDesVector);
             
-            RErr = RDes * RBI.transpose();
+            RErr = RDes * state.RBI().transpose();
             // Populate Axis Angle Error
             AAErr(0) = RErr(2,3) - RErr(3,2);
             AAErr(1) = RErr(1,3) - RErr(3,1);
             AAErr(2) = RErr(1,2) - RErr(2,1);
 
             // Proportional, Derivative, Conversion from  body to Inertial 
-            response_ = kpPtr_->asDiagonal() * AAErr - kdPtr_->asDiagonal() * omegaB + omegaB.asSkewSymmetric() * JB * omegaB;
+            response_ = kpPtr_->asDiagonal() * AAErr - kdPtr_->asDiagonal() * state.omegaB() + state.omegaB().asSkewSymmetric() * params.J() * state.omegaB();
             return response_;
         }
 
 
 
 
-// May Not be needed - just implement in header or figure out how to make it work
-// naiveEstimator::naiveEstimator(std::shared_ptr<quadParams> paramsPtr): stateEstimatorTemplate(paramsPtr)
-// {
-//     for(int i=0;i<paramsPtr->sensors().size();i++)
-//             {
-//                 if(paramsPtr->sensors()[i]->type == "IMU") // THIS IS JUST PSEUDOCODE
-//                 {
-//                     IMUPtr = paramsPtr->sensors()[i]; // RESOLVE THIS TYPE ISSUE
-//                 }
-//             } 
-// }
 
 
 // Assume that the fDynamics propogation sensor is 

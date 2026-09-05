@@ -4,17 +4,21 @@
 
 
 #include "quadState.h"
-#include "quadParams.h" 
+// #include "quadParams.h" 
 #include "sensors.h"
 #include "utils.h"
 
+// Forward declares
+class quadParams;
+
+
 // Passing Datastructures
-struct trajectoryControllerPacket
+struct trajCtrlPacket
 {
-    Eigen::Vector3d zBI;
+    Eigen::Vector3d ZDesVector;
     double FDes;
-    trajectoryControllerPacket(const Eigen::Vector3d & zBIInput, const double FDesInput){zBI=zBIInput;FDes=FDesInput;}
-    trajectoryControllerPacket(){}
+    trajCtrlPacket(const Eigen::Vector3d & ZDesVector_, const double FDes_){ZDesVector=ZDesVector_;FDes=FDes_;}
+    trajCtrlPacket(){}
 };
 struct poseEstimate
 {
@@ -44,46 +48,29 @@ struct trajectory
 class trajectoryControllerTemplate
 {
     protected:
-        // Controller variables
-        double m_;
-        double g_;
-        Eigen::Vector3d ZDesVector_;
-        double FDes_;
+        // Controller variables -pass m, g in at runtime, later profile to see if there are performance improvements
 
         // Helper Variables
-        Eigen::Vector3d FDesVector_;
-        Eigen::Vector3d gVector_;
-        
-        
+        Eigen::Vector3d FDesVector_, ZDesVector_; // To prevent constant memory reallocation
+        double FDes_; // To prevent constant memory reallocation
         
 
     public:
-        // Explicitly set kp and kd
+        // Constructors
         /* 
-            @param m Quad Mass
-            @param g Acceleration due to gravity, OPTIONAL (default 9.81 m/s^2)
+            No Arguments
         */
-        trajectoryControllerTemplate(
-            const double m,
-            const double g=9.81
-            )
-            : g_(g), m_(m) {gVector_ << 0,0,m*g;}
+        trajectoryControllerTemplate(){}
 
-        // Getters
-        const double m() const {return m_;}
-        const double g() const {return g_;}
-        const Eigen::Vector3d gVector()    const {return gVector_;}
-        // const Eigen::Vector3d FDesVector() const {return FDesVector_;}
+        // Getters - to avoid recomputing the same info
         const Eigen::Vector3d Zdes() const {return ZDesVector_;}
         const double Fdes_() const {return FDes_;}
 
-        // Setters
-        void m(const double m) {m_=m; gVector_[2]=m_*g_;}
-        void g(const double g) {g_=g; gVector_[2]=m_*g_;}
-        void mg(const double m, const double g) {m_=m; g_=g; gVector_[2]=m_*g_;}
+        // Setters - NA, stateless
 
         // Calculate control law response
         /* 
+            @param params quadParams object
             @param x Quad estimated position in world frame
             @param xDot Quad estimated velocity in world frame
             @param xDes Quad desired position in world frame
@@ -92,14 +79,13 @@ class trajectoryControllerTemplate
             @param xDotDotDes Quad desired acceleration in world frame (feed forward)
 
         */
-        virtual void response(
-            const Eigen::Vector3d & x,
-            const Eigen::Vector3d & xDot, 
+        virtual trajCtrlPacket response(
+            const quadParams & params,
+            const quadState & state, 
             const Eigen::Vector3d & xDes, 
-            const Eigen::Matrix3d & RBI,
             const Eigen::Vector3d & xDotDes = Eigen::Vector3d::Zero(),                                       
             const Eigen::Vector3d & xDotDotDes = Eigen::Vector3d::Zero()
-            ) const;
+            );
 };
 
 class PDTrajectoryController : public trajectoryControllerTemplate
@@ -118,18 +104,10 @@ class PDTrajectoryController : public trajectoryControllerTemplate
         /*
             @param kpPtr Pointer to the proportional gain of the controller
             @param kdPtr Pointer to the derivative gain
-            @param m Quad Mass
-            @param g Acceleration due to gravity, OPTIONAL (default 9.81 m/s^2)
         */
-        PDTrajectoryController(
-                        double kp, 
-                        double kd,
-                        const double m,
-                        const double g=9.81
-                        
-                        )
-                        : trajectoryControllerTemplate(m, g), kp_(kp), kd_(kd)  {normalizeFDesZ << 0,0,1;}
-
+        PDTrajectoryController(const double kp, const double kd)
+                        : trajectoryControllerTemplate(), kp_(kp), kd_(kd)  {normalizeFDesZ << 0,0,1;}
+        
         // Getters
         const double kp() const {return kp_ ;}
         const double kd() const {return kd_ ;}
@@ -140,14 +118,13 @@ class PDTrajectoryController : public trajectoryControllerTemplate
 
 
     // Calculate control law response
-    void response(
-                                    const Eigen::Vector3d & x,
-                                    const Eigen::Vector3d & xDot, 
-                                    const Eigen::Vector3d & xDes, 
-                                    const Eigen::Matrix3d & RBI,
-                                    const Eigen::Vector3d & xDotDes = Eigen::Vector3d::Zero(),                                       
-                                    const Eigen::Vector3d & xDotDotDes = Eigen::Vector3d::Zero()
-                                    );
+    trajCtrlPacket response(
+        const quadParams & params,
+        const quadState & state,
+        const Eigen::Vector3d & xDes, 
+        const Eigen::Vector3d & xDotDes = Eigen::Vector3d::Zero(),                                       
+        const Eigen::Vector3d & xDotDotDes = Eigen::Vector3d::Zero()
+        ) override;
 };
 
 
@@ -176,7 +153,8 @@ class attitudeControllerTemplate
         @param yawDes Desired angle of the x axis of the quad body in radians
         */
         virtual const Eigen::Vector3d & response(
-                                        const Eigen::Matrix3d & RBI,
+                                        const quadParams & params,
+                                        const quadState & state,
                                         const Eigen::Vector3d & FDes, 
                                         const Eigen::Vector3d & yawDes
                                         );
@@ -218,12 +196,11 @@ class PDAttitudeController : public attitudeControllerTemplate
 
         // Calculate control law response
         const Eigen::Vector3d & response(
-                                        const Eigen::Matrix3d & RBI,
-                                        const Eigen::Vector3d & xDes, 
-                                        const Eigen::Vector3d & zDes, 
-                                        const Eigen::Vector3d & omegaB,
-                                        const Eigen::Matrix3d & JB
-                                        );
+                                        const quadParams & params,
+                                        const quadState & state,
+                                        const Eigen::Vector3d & FDes, 
+                                        const Eigen::Vector3d & yawDes
+                                        ) override ;
 };
 
 
@@ -347,7 +324,7 @@ class naievePDController : public quadControllerTemplate // Transistion to havin
         std::shared_ptr<PDAttitudeController> attCtrlPtr_; 
         std::shared_ptr<naiveEstimator> estPtr_; 
     
-        public:
+    public:
 
     double placholderTrajKp = 1;
     double placeholderTrajKd = 1;
@@ -371,6 +348,7 @@ class naievePDController : public quadControllerTemplate // Transistion to havin
     Eigen::Vector3d placeholderAttKp = Eigen::Vector3d::Ones();
     Eigen::Vector3d placeholderAttKd = Eigen::Vector3d::Ones();
     
+    // Constructor
     naievePDController
     (
         const std::string name,
@@ -478,7 +456,7 @@ class naievePDController : public quadControllerTemplate // Transistion to havin
             }
         }
         
-        PDTrajectoryController trajCon(trajKp, trajKd, params.m());
+        PDTrajectoryController trajCon(trajKp, trajKd);
         PDAttitudeController attCon(std::make_shared<Eigen::Vector3d>(attKp), std::make_shared<Eigen::Vector3d>(attKd));
         naiveEstimator Estimator(std::make_shared<quadParams>(params));
 
@@ -555,74 +533,3 @@ class naievePDController : public quadControllerTemplate // Transistion to havin
 };
 
 
-// Read in type of controller from the data only
-controllerTypes readControllerType(const std::string & line)
-{
-    // Controller Names
-    std::array<std::string, 1> controllerNames = {"naievePD"};
-
-    // Temp helper variables
-    std::string varName, varValue, controllerName, packet;
-    int delimiterLocation, controllerIndex;
-
-    // Process line
-    std::string processingLine = line;
-    cutWhitespace(processingLine);
-
-    // Seperate out prop parameters with semicolon delimeters
-    replaceDelimiters(processingLine,';');
-    std::istringstream iss(processingLine);
-
-    
-    while(iss >> packet)
-    {
-        // Seperate out prop parameters
-        delimiterLocation = packet.find("=");
-        varName = packet.substr(0,delimiterLocation);
-        varValue = packet.substr(delimiterLocation+1, packet.size()-delimiterLocation-1);
-
-        // Trim all whitespace
-        cutWhitespace(varName);
-
-        // Ensure there is an equals sign
-        if(delimiterLocation==std::string::npos)
-        {
-            std::cout << "THIS PACKET CONTAINS NO EQUALS SIGN DELIMITER:" << std::endl << packet << std::endl;
-            continue;
-        }
-
-        // Check if this packet has the controller type
-        controllerIndex = -1;
-        for(int i=0;i<controllerNames.size();i++)
-        {
-            if(controllerNames[i] == varName)
-            {
-                controllerIndex = i;
-                break;
-            }
-        }
-
-        // Skip to future packets if type is not here
-        if(controllerIndex==-1)
-        {
-            continue;
-        }
-
-
-        // Return the appropriate controller constructor
-        switch(controllerIndex)
-        {
-            case 0: // naieve PD Controller
-                // Construct PD controller here - pass the rest of the iss as data for the controller?
-                // naievePDController foo(processingLine);
-                return naievePDControllerType;
-                break;
-
-            default:
-                break;
-        }
-    }
-    
-    // Default case
-    return UnknownController;
-}

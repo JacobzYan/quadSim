@@ -10,11 +10,12 @@
 #include <memory>
 
 #include "poseModules.h"
+#include "quadController.h"
 
 // Forward declare to avoid circular includes - quadParams just holds these in order to have a single source to reference from
 class sensorTemplate;
 class quadControllerTemplate;
-enum controllerTypes {UnknownController, naievePDControllerType};
+enum ControllerType {UnknownController, naievePDControllerType};
 
 class quadParams
 {
@@ -28,7 +29,7 @@ private:
     int varIndex;
 
     // Statics
-    inline static const std::vector<std::string> varNames = {"g", "pAir", "m", "Cd", "Ad", "J", "xCOM", "prop", "name", "sensor"}; // List of variable names to recognize -CHANGE THIS TO ENUM IN THE FUTURE
+    inline static const std::vector<std::string> varNames = {"g", "pAir", "m", "Cd", "Ad", "J", "xCOM", "prop", "name", "sensor", "controller"}; // List of variable names to recognize -CHANGE THIS TO ENUM IN THE FUTURE
     inline static const int nVars = varNames.size();
     
     // Settings
@@ -50,7 +51,7 @@ private:
     std::shared_ptr<double> gPtr_ = std::make_shared<double>(g_);
     std::shared_ptr<double> mPtr_ = std::make_shared<double>(m_);
     std::shared_ptr<quadControllerTemplate> controller_;
-    controllerTypes controllerType_;
+    ControllerType controllerType_;
     
     // Sensor Params
     std::vector<const sensorTemplate*> sensors_; // Vector of pointers to sensor objects
@@ -106,8 +107,10 @@ public:
     const Eigen::Vector3d& xCOM() const {return xCOM_;} // [m] Location of the center of mass relative to the origin
     const std::vector< const propParams*>& props() const {return props_;} // Returns reference to vector of pointers to prop objects
     const std::vector<const sensorTemplate*>& sensors() const {return sensors_;} // Returns referense to sensors
-    const std::shared_ptr<quadControllerTemplate> controller() const {return controller_;}
+    const ControllerType controllerType() const {return  controllerType_;}
+    const std::shared_ptr<quadControllerTemplate> & controller() const {return controller_;}
     const std::string & name() const {return name_;}
+
 
     // Setters
     void g(const double g) {g_=g;} //[m/s^2] acceleration due to gravity - You probably shouldn't be setting this...
@@ -128,6 +131,7 @@ public:
     } 
     void addProp(const propParams* prop_ptr){props_.push_back(prop_ptr);} // Add a prop to the vector
     void addSensor(std::string line); // Implemented in quadParams.cc
+    void setController(const quadControllerTemplate quadController, const ControllerType ctrlType) {controller_ = std::make_shared<quadControllerTemplate>(quadController); controllerType_ = ctrlType;}
 
     // config initialization functions
     bool readFile(std::string path);
