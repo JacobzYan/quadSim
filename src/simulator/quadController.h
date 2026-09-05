@@ -155,7 +155,7 @@ class attitudeControllerTemplate
         virtual const Eigen::Vector3d & response(
                                         const quadParams & params,
                                         const quadState & state,
-                                        const Eigen::Vector3d & FDes, 
+                                        const trajCtrlPacket & trajCtrlOutput, 
                                         const Eigen::Vector3d & yawDes
                                         );
 };
@@ -198,7 +198,7 @@ class PDAttitudeController : public attitudeControllerTemplate
         const Eigen::Vector3d & response(
                                         const quadParams & params,
                                         const quadState & state,
-                                        const Eigen::Vector3d & FDes, 
+                                        const trajCtrlPacket & trajCtrlOutput, 
                                         const Eigen::Vector3d & yawDes
                                         ) override ;
 };
