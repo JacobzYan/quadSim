@@ -122,7 +122,7 @@ public:
     void xCOM(const Eigen::Vector3d& xCOM){xCOM_=xCOM;} // [m] Location of the center of mass relative to the origin
     void props(const std::vector<const propParams*>& props){props_=props;} // Returns reference to vector of pointers to prop objects
     void name(const std::string & name){name_=name;}
-
+        
     // Specialized setters
     const bool setProp(const propParams* prop, const int i) // Set the propParams object at index i, returns true if successful
     {

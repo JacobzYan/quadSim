@@ -15,8 +15,9 @@ class poseTemplate
     private:
         Eigen::Vector3d location_; // [m] Location of the module with respect to the quad body frame, origin
         Eigen::Matrix3d R_; // Rotation matrix from module coordinate frame to quad body coordinate frame
+
     public:
-        /// Constructors
+        // Constructors
         poseTemplate(){} // Null constructor to reserve memory
         // Argument Constructor
         /* 
@@ -71,7 +72,9 @@ class propParams : public poseTemplate
         : kF_(kF), kN_(kN), cm_(cm), tauM_(tauM), omegaRDir_(omegaRDir), name_(name)
         {}
     
-    propParams(const std::string & line); //String line constructor - Defined in quadParams.cc
+    propParams(const std::string & line); //String line constructor - Defined in quadParams.cc - make this a static factor
+
+    
 
     /// Getters
     const double kF() const {return kF_;}

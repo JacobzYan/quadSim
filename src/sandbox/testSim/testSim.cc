@@ -22,6 +22,8 @@ int main()
     
     quadState state0(sv);
 
+    
+
     // Add to quad object
     quad defaultQuad(p, state0);
     std::cout << std::endl << "Quad Created" << std::endl;

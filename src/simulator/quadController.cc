@@ -38,12 +38,12 @@ trajCtrlPacket PDTrajectoryController::response(
                                     const Eigen::Vector3d & xDotDes = Eigen::Vector3d::Zero(),                                       
                                     const Eigen::Vector3d & xDotDotDes = Eigen::Vector3d::Zero()
                                     )
-    {
-        // Control gains + Feed forward desired accel, gravity, normalize to extract the portion || to zRBI
-        FDesVector_ = (kp_*(state.pos()-xDes) + kd_*(state.vel()-xDotDes) - Eigen::Vector3d(0,0,params.g() * params.m()));
-        ZDesVector_ = FDesVector_.normalized();
-        FDes_= FDesVector_.transpose() * state.RBI().transpose() * normalizeFDesZ;
-    }
+{
+    // Control gains + Feed forward desired accel, gravity, normalize to extract the portion || to zRBI
+    FDesVector_ = (kp_*(state.pos()-xDes) + kd_*(state.vel()-xDotDes) - Eigen::Vector3d(0,0,params.g() * params.m()));
+    ZDesVector_ = FDesVector_.normalized();
+    FDes_= FDesVector_.transpose() * state.RBI().transpose() * normalizeFDesZ;
+}
 
 
 
