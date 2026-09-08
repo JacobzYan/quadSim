@@ -6,7 +6,7 @@
 #include <fstream>
 
 
-// Implemented in quadParams.cc
+
 
 
 // Base class for various sensors/motors 
@@ -17,10 +17,14 @@ class poseTemplate
         Eigen::Matrix3d R_; // Rotation matrix from module coordinate frame to quad body coordinate frame
 
     public:
-        // Constructors
-        poseTemplate(){} // Null constructor to reserve memory
-        // Argument Constructor
+        // == Constructors ==
+        /*
+            Null constructor to reserve memory
+        */
+        poseTemplate(){}
+
         /* 
+        Argument Constructor
         @param location location of the origin of the module with respect to the quad body frame and origin
         @param R Orientation of the module in point rotation convention with respect to the body frame
         */
@@ -29,11 +33,11 @@ class poseTemplate
             {}
         
 
-        /// Getters
+        // == Getters == 
         const Eigen::Vector3d& location() const {return location_;}
         const Eigen::Matrix3d& R() const {return R_;}
 
-        /// Setters
+        // == Setters ==
         void location(const Eigen::Vector3d& location){location_=location;}
         void R(const Eigen::Matrix3d & R){R_=R;}
 
@@ -45,7 +49,7 @@ class propParams : public poseTemplate
 {
     private:
 
-        /// Parameters
+        // == Parameters ==
         double kF_, kN_; //  prop lift force coeff, prop torque coeff
         double cm_, tauM_; // motor constant response, and  motor time constant
         int omegaRDir_; // Direction - +1 for CCW, -1 for CW
@@ -56,10 +60,13 @@ class propParams : public poseTemplate
         
     public:
     
-    // Constructors
-    propParams(){} // Empty constructor
-    // Arg constructor
+    // == Constructors ==
+    /*
+        Empty Constructor
+    */
+    propParams(){}
     /* 
+        Arg line constructor
         @param kF Prop force coefficeint where F = kF * omega^2
         @param kN Prop torque coefficeint where N = kN * omega^2
         @param cm Prop motor constant where omega = cm * voltage
@@ -72,7 +79,7 @@ class propParams : public poseTemplate
         : kF_(kF), kN_(kN), cm_(cm), tauM_(tauM), omegaRDir_(omegaRDir), name_(name)
         {}
     
-    propParams(const std::string & line); //String line constructor - Defined in quadParams.cc - make this a static factor
+    propParams(const std::string & line);
 
     
 
