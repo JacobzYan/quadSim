@@ -68,7 +68,7 @@ const Eigen::Vector3d & PDAttitudeController::response(
             AAErr(2) = RErr(1,2) - RErr(2,1);
 
             // Proportional, Derivative, Conversion from  body to Inertial 
-            response_ = kpPtr_->asDiagonal() * AAErr - kdPtr_->asDiagonal() * state.omegaB() + state.omegaB().asSkewSymmetric() * params.J() * state.omegaB();
+            response_ = kp_->asDiagonal() * AAErr - kd_->asDiagonal() * state.omegaB() + state.omegaB().asSkewSymmetric() * params.J() * state.omegaB();
             return response_;
         }
 
