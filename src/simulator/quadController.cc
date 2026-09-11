@@ -68,7 +68,7 @@ const Eigen::Vector3d & PDAttitudeController::response(
             AAErr(2) = RErr(1,2) - RErr(2,1);
 
             // Proportional, Derivative, Conversion from  body to Inertial 
-            response_ = kp_->asDiagonal() * AAErr - kd_->asDiagonal() * state.omegaB() + state.omegaB().asSkewSymmetric() * params.J() * state.omegaB();
+            response_ = kp_.asDiagonal() * AAErr - kd_.asDiagonal() * state.omegaB() + state.omegaB().asSkewSymmetric() * params.J() * state.omegaB();
             return response_;
         }
 
@@ -76,7 +76,7 @@ const Eigen::Vector3d & PDAttitudeController::response(
         
 
 
-naievePDController::updateVCBaseMat(const quadParams & params)
+void naievePDController::updateVCBaseMat(const quadParams & params)
 {
     /*
     INTENDED STRUCTURE:
@@ -103,7 +103,7 @@ naievePDController::updateVCBaseMat(const quadParams & params)
     VCFMax = (params.propCm().array().square() * params.propKf().array().square()).sum() * eaMax * eaMax;
 }
 
-naievePDController::void getVoltages(Eigen::Vector4d & motorVoltages, const Eigen::Vector3d & NDemand, const double FDemand) override
+void naievePDController::getVoltages(Eigen::Vector4d & motorVoltages, const Eigen::Vector3d & NDemand, const double FDemand)
 {
         
         const static double dTorqueModifier = .05;
@@ -134,6 +134,99 @@ naievePDController::void getVoltages(Eigen::Vector4d & motorVoltages, const Eige
         // Determine max force from motor max voltage
         // If force demand from any motor is too high, incrementally decrease demanded torque until no motor torque demand is too high
     }
+
+
+
+
+
+naievePDController naievePDController::strLineConstructor(const std::string & line, const quadParams params)
+{
+    // Temp helper variables
+    std::string varName;
+    std::string varValue; 
+    std::string packet;
+    int delimiterLocation;
+    int varIndex;
+    // Data storage
+    std::string name = "NA";
+    double trajKp, trajKd = 0;
+    Eigen::Vector3d attKp, attKd = Eigen::Vector3d::Zero();
+
+    // Process line
+    std::string processingLine = line;
+    cutWhitespace(processingLine);
+
+    // Seperate out controller parameters with semicolon delimeters
+    replaceDelimiters(processingLine,';');
+    std::istringstream iss(processingLine);
+
+    
+    while(iss >> packet)
+    {
+        // Seperate out controller parameters
+        delimiterLocation = packet.find("=");
+        varName = packet.substr(0,delimiterLocation);
+        varValue = packet.substr(delimiterLocation+1, packet.size()-delimiterLocation-1);
+
+        // Trim all whitespace
+        cutWhitespace(varName);
+
+        // Ensure there is an equals sign
+        if(delimiterLocation==std::string::npos)
+        {
+            std::cout << "THIS PACKET CONTAINS NO EQUALS SIGN DELIMITER:" << std::endl << packet << std::endl;
+            continue;
+        }
+
+        // Check if line start matches any variable names
+        varIndex = -1;
+        for(int i=0;i<varNames.size();i++)
+        {
+            if(varNames[i] == varName)
+            {
+                varIndex = i;
+                break;
+            }
+        }
+
+        // Trim Whitespace for name, cut all whitespace for others
+        if(varIndex==7){trim(varValue);} // Name - preserve internal spaces
+        else{cutWhitespace(varValue);}
+
+        // Assign the appropriate value
+        switch(varIndex)
+        {
+            case 0: // name
+                name = varValue;
+                break;
+            case 1: // trajKp
+                trajKp = std::stod(varValue);
+                break;
+            case 2: // trajKd
+                trajKd = std::stod(varValue);
+                break;
+            case 3: // attKp
+                attKp = splitVector3d(varValue, ',');
+                break;
+            case 4: // attKd
+                attKd = splitVector3d(varValue, ',');
+                break;
+            default:
+                break;
+        }
+    }
+    
+    PDTrajectoryController trajCon(trajKp, trajKd);
+    PDAttitudeController attCon(attKp, attKd);
+    naiveEstimator Estimator(std::make_shared<quadParams>(params));
+
+
+    return naievePDController(name, std::make_shared<PDTrajectoryController>(trajCon),std::make_shared<PDAttitudeController>(attCon), std::make_shared<naiveEstimator>(Estimator));
+}
+
+
+
+
 
 
 

@@ -71,7 +71,7 @@ class trajectoryControllerTemplate // Base class for traj controllers
         // == Setters ==
         //NA, stateless
 
-        
+        // == Member Functions ==
         /* 
             Calculate control law response
             @param params quadParams object
@@ -212,6 +212,7 @@ class PDAttitudeController : public attitudeControllerTemplate
         void kp(const Eigen::Vector3d kp) {kp_ = kp;}
         void kd(const Eigen::Vector3d kd) {kd_ = kd;}
 
+        // == Member Functions ==
         /*
             Calculate control law response
             @param params quadParams object
@@ -292,8 +293,7 @@ class naiveEstimator : public stateEstimatorTemplate // WIP
         const sensorTemplate * IMUPtr;
 
     public:
-        naiveEstimator(std::shared_ptr<quadParams> paramsPtr): IMUPtr(paramsPtr->sensors()[0]), stateEstimatorTemplate(paramsPtr)
-        {}
+        naiveEstimator(std::shared_ptr<quadParams> paramsPtr): IMUPtr(paramsPtr->sensors()[0]), stateEstimatorTemplate(paramsPtr){}
 
 };
 
@@ -321,6 +321,7 @@ class quadControllerTemplate
             @param attCon pointer to an attitude controller
             @param estCon pointer to a state estimator
         */
+        
         quadControllerTemplate
         (
             std::shared_ptr<trajectoryControllerTemplate> trajCon, 
@@ -341,15 +342,15 @@ class quadControllerTemplate
 class naievePDController : public quadControllerTemplate // Transistion to having the whole controller be uninherited?
 {
     private:
+        // == Helper Variables ==
         Eigen::Matrix4d VCBaseMat;
         double VCFMax;
-        static constexpr double eaMax = 12; // Later this should be a quad parameter
         inline static const std::array<std::string, 5> varNames = {"name", "trajKp", "trajKd", "attKp", "attKd"};
 
+        // == Controller Variables ==
+        static constexpr double eaMax = 12; // Later this should be a quad parameter
         std::string name_;
-        // std::shared_ptr<PDTrajectoryController> trajCtrlPtr_; 
-        // std::shared_ptr<PDAttitudeController> attCtrlPtr_; 
-        // std::shared_ptr<naiveEstimator> estPtr_; 
+
     
     public:
 
@@ -371,10 +372,6 @@ class naievePDController : public quadControllerTemplate // Transistion to havin
     void attKd(const Eigen::Vector3d & attKd){std::static_pointer_cast<PDAttitudeController>(attCtrlPtr_)->kd(attKd);}
 
     
-
-    // Eigen::Vector3d placeholderAttKp = Eigen::Vector3d::Ones();
-    // Eigen::Vector3d placeholderAttKd = Eigen::Vector3d::Ones();
-    
     //  == Constructor == 
     /*
         Arg Constructor
@@ -387,112 +384,111 @@ class naievePDController : public quadControllerTemplate // Transistion to havin
         const std::shared_ptr<PDTrajectoryController> trajCtrlPtr,
         const std::shared_ptr<PDAttitudeController> attCtrlPtr,
         const std::shared_ptr<naiveEstimator> estPtr
-    ): 
-    name_(name) //, trajCtrlPtr_(trajCtrlPtr), attCtrlPtr_(attCtrlPtr), estPtr_(estPtr)
+    ): quadControllerTemplate(),
+    name_(name)
     {
         trajCtrlPtr_ = std::static_pointer_cast<trajectoryControllerTemplate>(trajCtrlPtr);
         attCtrlPtr_ = std::static_pointer_cast<attitudeControllerTemplate>(attCtrlPtr_);
         estPtr_ = std::static_pointer_cast<stateEstimatorTemplate>(estPtr);
     }
 
+    /*
+    Constructor given references to controllers
+    @param trajectoryController
+    @param attitudeController
+    @param stateEstimator
+    */
+    static naievePDController createNaievePD(
+                                        const trajectoryControllerTemplate & trajCon, 
+                                        const attitudeControllerTemplate & attCon, 
+                                        const stateEstimatorTemplate & stateEst
+                                        );
 
-    // Use simpler constructors and factory functions
-    // naievePDController
-    // (
-    //     std::shared_ptr<quadParams> quadParamsPtr,
-    //     const double trajKp=1,
-    //     const double trajKd=1,
-    //     const Eigen::Vector3d attKp = Eigen::Vector3d::Ones(),
-    //     const Eigen::Vector3d attKd = Eigen::Vector3d::Ones()
-    // ): 
-    //     quadControllerTemplate(std::make_shared<PDTrajectoryController>(new PDTrajectoryController(trajKp, trajKd,quadParamsPtr->m())), attCtrlPtr_, estPtr_),
-    //     VCBaseMat(Eigen::Matrix4d::Zero())
-    //     {updateVCBaseMat();}
+    static naievePDController strLineConstructor(const std::string & line, const quadParams params);
+    // static naievePDController strLineConstructor(const std::string & line, const quadParams params)
+    // {
+    //     // Temp helper variables
+    //     std::string varName;
+    //     std::string varValue; 
+    //     std::string packet;
+    //     int delimiterLocation;
+    //     int varIndex;
+    //     // Data storage
+    //     std::string name = "NA";
+    //     double trajKp, trajKd = 0;
+    //     Eigen::Vector3d attKp, attKd = Eigen::Vector3d::Zero();
 
-    static naievePDController strLineConstructor(const std::string & line, const quadParams params)
-    {
-        // Temp helper variables
-        std::string varName;
-        std::string varValue; 
-        std::string packet;
-        int delimiterLocation;
-        int varIndex;
-        // Data storage
-        std::string name = "NA";
-        double trajKp, trajKd = 0;
-        Eigen::Vector3d attKp, attKd = Eigen::Vector3d::Zero();
+    //     // Process line
+    //     std::string processingLine = line;
+    //     cutWhitespace(processingLine);
 
-        // Process line
-        std::string processingLine = line;
-        cutWhitespace(processingLine);
-
-        // Seperate out controller parameters with semicolon delimeters
-        replaceDelimiters(processingLine,';');
-        std::istringstream iss(processingLine);
+    //     // Seperate out controller parameters with semicolon delimeters
+    //     replaceDelimiters(processingLine,';');
+    //     std::istringstream iss(processingLine);
 
         
-        while(iss >> packet)
-        {
-            // Seperate out controller parameters
-            delimiterLocation = packet.find("=");
-            varName = packet.substr(0,delimiterLocation);
-            varValue = packet.substr(delimiterLocation+1, packet.size()-delimiterLocation-1);
+    //     while(iss >> packet)
+    //     {
+    //         // Seperate out controller parameters
+    //         delimiterLocation = packet.find("=");
+    //         varName = packet.substr(0,delimiterLocation);
+    //         varValue = packet.substr(delimiterLocation+1, packet.size()-delimiterLocation-1);
 
-            // Trim all whitespace
-            cutWhitespace(varName);
+    //         // Trim all whitespace
+    //         cutWhitespace(varName);
 
-            // Ensure there is an equals sign
-            if(delimiterLocation==std::string::npos)
-            {
-                std::cout << "THIS PACKET CONTAINS NO EQUALS SIGN DELIMITER:" << std::endl << packet << std::endl;
-                continue;
-            }
+    //         // Ensure there is an equals sign
+    //         if(delimiterLocation==std::string::npos)
+    //         {
+    //             std::cout << "THIS PACKET CONTAINS NO EQUALS SIGN DELIMITER:" << std::endl << packet << std::endl;
+    //             continue;
+    //         }
 
-            // Check if line start matches any variable names
-            varIndex = -1;
-            for(int i=0;i<varNames.size();i++)
-            {
-                if(varNames[i] == varName)
-                {
-                    varIndex = i;
-                    break;
-                }
-            }
+    //         // Check if line start matches any variable names
+    //         varIndex = -1;
+    //         for(int i=0;i<varNames.size();i++)
+    //         {
+    //             if(varNames[i] == varName)
+    //             {
+    //                 varIndex = i;
+    //                 break;
+    //             }
+    //         }
 
-            // Trim Whitespace for name, cut all whitespace for others
-            if(varIndex==7){trim(varValue);} // Name - preserve internal spaces
-            else{cutWhitespace(varValue);}
+    //         // Trim Whitespace for name, cut all whitespace for others
+    //         if(varIndex==7){trim(varValue);} // Name - preserve internal spaces
+    //         else{cutWhitespace(varValue);}
 
-            // Assign the appropriate value
-            switch(varIndex)
-            {
-                case 0: // name
-                    name = varValue;
-                    break;
-                case 1: // trajKp
-                    trajKp = std::stod(varValue);
-                    break;
-                case 2: // trajKd
-                    trajKd = std::stod(varValue);
-                    break;
-                case 3: // attKp
-                    attKp = splitVector3d(varValue, ',');
-                    break;
-                case 4: // attKd
-                    attKd = splitVector3d(varValue, ',');
-                    break;
-                default:
-                    break;
-            }
-        }
+    //         // Assign the appropriate value
+    //         switch(varIndex)
+    //         {
+    //             case 0: // name
+    //                 name = varValue;
+    //                 break;
+    //             case 1: // trajKp
+    //                 trajKp = std::stod(varValue);
+    //                 break;
+    //             case 2: // trajKd
+    //                 trajKd = std::stod(varValue);
+    //                 break;
+    //             case 3: // attKp
+    //                 attKp = splitVector3d(varValue, ',');
+    //                 break;
+    //             case 4: // attKd
+    //                 attKd = splitVector3d(varValue, ',');
+    //                 break;
+    //             default:
+    //                 break;
+    //         }
+    //     }
         
-        PDTrajectoryController trajCon(trajKp, trajKd);
-        PDAttitudeController attCon(attKp, attKd);
-        naiveEstimator Estimator(std::make_shared<quadParams>(params));
+    //     PDTrajectoryController trajCon(trajKp, trajKd);
+    //     PDAttitudeController attCon(attKp, attKd);
+    //     naiveEstimator Estimator(std::make_shared<quadParams>(params));
 
 
-        return naievePDController(name, std::make_shared<PDTrajectoryController>(trajCon),std::make_shared<PDAttitudeController>(attCon), std::make_shared<naiveEstimator>(Estimator));
-    }
+    //     return naievePDController(name, std::make_shared<PDTrajectoryController>(trajCon),std::make_shared<PDAttitudeController>(attCon), std::make_shared<naiveEstimator>(Estimator));
+    // }
     
     void updateVCBaseMat(const quadParams & params);
     
