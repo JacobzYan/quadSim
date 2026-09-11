@@ -76,6 +76,66 @@ const Eigen::Vector3d & PDAttitudeController::response(
         
 
 
+naievePDController::updateVCBaseMat(const quadParams & params)
+{
+    /*
+    INTENDED STRUCTURE:
+    [kf1 * cm1^2 ... kfn * cmn^2]
+    [kf1 * y1    ...    kfn * yn]
+    [-kf1 * x1   ...   -kfn * xn]
+    [kn1, -kn2   ... kn(n-1), -knn]
+    */
+    Eigen::Matrix<double, 2, 4> temp, temp2;
+    temp = params.propLocation().block(1,0,2,4); // Grabs X,Y Pos without editing them
+    
+
+    Eigen::Vector4d kTVec = (params.propKn().array() / params.propKf().array() * params.propDir().array()).matrix();
+    VCBaseMat.row(0) = Eigen::Vector4d::Ones();
+    VCBaseMat.row(1) = temp.row(1); // Puts Y values in row 2, -x values in row 1
+    VCBaseMat.row(2) = - temp.row(0);
+    VCBaseMat.row(3) = kTVec;
+
+    // SPLIT INTO 2 LINES FOR DEBUG
+    // VCBaseMat = (VCBaseMat.array() * paramsPtr_->propKf().array() / paramsPtr_->propCm().transpose().array()).matrix();
+    VCBaseMat = VCBaseMat * params.propKf().asDiagonal();
+    VCBaseMat = VCBaseMat * params.propCm().asDiagonal().inverse();
+
+    VCFMax = (params.propCm().array().square() * params.propKf().array().square()).sum() * eaMax * eaMax;
+}
+
+naievePDController::void getVoltages(Eigen::Vector4d & motorVoltages, const Eigen::Vector3d & NDemand, const double FDemand) override
+{
+        
+        const static double dTorqueModifier = .05;
+        double torqueModifier = 1;
+        Eigen::Vector4d vWorking, eaVec;
+        
+        while(true)
+        {
+            vWorking(0) = std::min(FDemand, VCFMax); // Working F value
+            vWorking.segment(1,3) = NDemand * torqueModifier; // Working N value
+
+            eaVec = VCBaseMat * vWorking;
+
+            if(eaVec.maxCoeff() < eaMax)
+            {
+                break;
+            }
+
+            torqueModifier -= dTorqueModifier;
+            
+
+        }
+        motorVoltages = eaVec;
+
+
+        // Limit max voltage - TODO
+        // Set negative F des to 0
+        // Determine max force from motor max voltage
+        // If force demand from any motor is too high, incrementally decrease demanded torque until no motor torque demand is too high
+    }
+
+
 
 // Assume that the fDynamics propogation sensor is 
 quadState::stateVector ukfEstimator::estState (const std::vector<sensorTemplate*> measSensorPointers, std::vector<std::vector<double>> sensorReadings)

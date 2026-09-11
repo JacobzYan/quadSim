@@ -494,32 +494,8 @@ class naievePDController : public quadControllerTemplate // Transistion to havin
         return naievePDController(name, std::make_shared<PDTrajectoryController>(trajCon),std::make_shared<PDAttitudeController>(attCon), std::make_shared<naiveEstimator>(Estimator));
     }
     
-    void updateVCBaseMat(const quadParams & params)
-    {
-        /*
-        INTENDED STRUCTURE:
-        [kf1 * cm1^2 ... kfn * cmn^2]
-        [kf1 * y1    ...    kfn * yn]
-        [-kf1 * x1   ...   -kfn * xn]
-        [kn1, -kn2   ... kn(n-1), -knn]
-        */
-        Eigen::Matrix<double, 2, 4> temp, temp2;
-        temp = params.propLocation().block(1,0,2,4); // Grabs X,Y Pos without editing them
-       
-
-        Eigen::Vector4d kTVec = (params.propKn().array() / params.propKf().array() * params.propDir().array()).matrix();
-        VCBaseMat.row(0) = Eigen::Vector4d::Ones();
-        VCBaseMat.row(1) = temp.row(1); // Puts Y values in row 2, -x values in row 1
-        VCBaseMat.row(2) = - temp.row(0);
-        VCBaseMat.row(3) = kTVec;
-
-        // SPLIT INTO 2 LINES FOR DEBUG
-        // VCBaseMat = (VCBaseMat.array() * paramsPtr_->propKf().array() / paramsPtr_->propCm().transpose().array()).matrix();
-        VCBaseMat = VCBaseMat * params.propKf().asDiagonal();
-        VCBaseMat = VCBaseMat * params.propCm().asDiagonal().inverse();
-
-        VCFMax = (params.propCm().array().square() * params.propKf().array().square()).sum() * eaMax * eaMax;
-    }
+    void updateVCBaseMat(const quadParams & params);
+    
 
 
     // Assumes motors face up
