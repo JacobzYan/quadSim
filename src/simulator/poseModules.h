@@ -19,7 +19,7 @@ class poseTemplate
 
     public:
         // == Constructors ==
-        poseTemplate(){} // Null constructor to reserve memory
+        poseTemplate(){} // Null constructor
         
         /* 
         Argument Constructor
@@ -57,11 +57,7 @@ class propParams : public poseTemplate
     public:
     
     // == Constructors ==
-
-    /*
-    Empty constructor
-    */
-    propParams(){} 
+    propParams(){} // Null constructor
     
     /* 
         Arg constructor
@@ -83,9 +79,11 @@ class propParams : public poseTemplate
         : kF_(kF), kN_(kN), cm_(cm), tauM_(tauM), omegaRDir_(omegaRDir), name_(name)
         {}
     
+    /*
+    String line constructor
+    @param line string containing init information
+    */
     propParams(const std::string & line);
-
-    
 
     // == Getters ==
     const double kF() const {return kF_;}

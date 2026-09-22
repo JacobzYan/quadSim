@@ -9,6 +9,8 @@
 #include <fstream>
 #include <memory>
 
+
+
 #include "poseModules.h"
 #include "quadController.h"
 
@@ -131,7 +133,7 @@ public:
     } 
     void addProp(const propParams* prop_ptr){props_.push_back(prop_ptr);} // Add a prop to the vector
     void addSensor(std::string line); // Implemented in quadParams.cc
-    void setController(const quadControllerTemplate quadController, const ControllerType ctrlType) {controller_ = std::make_shared<quadControllerTemplate>(quadController); controllerType_ = ctrlType;}
+    void setController(const quadControllerTemplate quadController, const ControllerType ctrlType);
 
     // config initialization functions
     bool readFile(std::string path);

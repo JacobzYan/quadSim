@@ -18,7 +18,7 @@ struct trajCtrlPacket // For packaging traj controller output
     Eigen::Vector3d ZDesVector;
     double FDes;
     trajCtrlPacket(const Eigen::Vector3d & ZDesVector_, const double FDes_){ZDesVector=ZDesVector_;FDes=FDes_;}
-    trajCtrlPacket(){}
+    trajCtrlPacket(): ZDesVector(Eigen::Vector3d::Zero()), FDes(0.0){}
 };
 struct controllerDemands // For packaging att controller output
 {
@@ -43,7 +43,6 @@ struct trajectory // Store desired time histories
 
 
 
-
 // Trajectory Controllers
 class trajectoryControllerTemplate // Base class for traj controllers
 {
@@ -54,14 +53,14 @@ class trajectoryControllerTemplate // Base class for traj controllers
         //  == Helper Variables == 
         Eigen::Vector3d FDesVector_, ZDesVector_; // To prevent constant memory reallocation
         double FDes_; // To prevent constant memory reallocation
-        
+        trajCtrlPacket response_; // To prevent constant memory reallocation
 
     public:
         // ==  Constructors ==
         /* 
             No Arguments
         */
-        trajectoryControllerTemplate(){}
+        trajectoryControllerTemplate(): FDesVector_(Eigen::Vector3d::Zero()), FDes_(0.0), response_(){}
 
         // == Getters == 
         // To avoid recomputing the same info
@@ -99,6 +98,7 @@ class PDTrajectoryController : public trajectoryControllerTemplate
         // == Helper Variables ==
         // gVector, FDesVector inherited from template
         Eigen::Vector3d normalizeFDesZ;
+        
         
 
     public: 
@@ -293,7 +293,7 @@ class naiveEstimator : public stateEstimatorTemplate // WIP
         const sensorTemplate * IMUPtr;
 
     public:
-        naiveEstimator(std::shared_ptr<quadParams> paramsPtr): IMUPtr(paramsPtr->sensors()[0]), stateEstimatorTemplate(paramsPtr){}
+        naiveEstimator(std::shared_ptr<quadParams> paramsPtr);
 
 };
 
@@ -362,8 +362,8 @@ class naievePDController : public quadControllerTemplate // Transistion to havin
     const std::string name() const {return name_;}
     const double trajKp() const {return std::static_pointer_cast<PDTrajectoryController>(trajCtrlPtr_)->kp();}
     const double trajKd() const {return std::static_pointer_cast<PDTrajectoryController>(trajCtrlPtr_)->kd();}
-    const Eigen::Vector3d attKp() const {std::static_pointer_cast<PDAttitudeController>(attCtrlPtr_)->kp();}
-    const Eigen::Vector3d attKd() const {std::static_pointer_cast<PDAttitudeController>(attCtrlPtr_)->kd();}
+    const Eigen::Vector3d attKp() const {return std::static_pointer_cast<PDAttitudeController>(attCtrlPtr_)->kp();}
+    const Eigen::Vector3d attKd() const {return std::static_pointer_cast<PDAttitudeController>(attCtrlPtr_)->kd();}
 
     void name(const std::string & name){name_=name;}
     void trajKp(const double & trajKp){std::static_pointer_cast<PDTrajectoryController>(trajCtrlPtr_)->kp(trajKp);}
@@ -495,39 +495,9 @@ class naievePDController : public quadControllerTemplate // Transistion to havin
 
 
     // Assumes motors face up
-    void getVoltages(Eigen::Vector4d & motorVoltages, const Eigen::Vector3d & NDemand, const double FDemand) override
-    {
-        
-        const static double dTorqueModifier = .05;
-        double torqueModifier = 1;
-        Eigen::Vector4d vWorking, eaVec;
-        
-        while(true)
-        {
-            vWorking(0) = std::min(FDemand, VCFMax); // Working F value
-            vWorking.segment(1,3) = NDemand * torqueModifier; // Working N value
-
-            eaVec = VCBaseMat * vWorking;
-
-            if(eaVec.maxCoeff() < eaMax)
-            {
-                break;
-            }
-
-            torqueModifier -= dTorqueModifier;
-            
-
-        }
-        motorVoltages = eaVec;
-
-
-        // Limit max voltage - TODO
-        // Set negative F des to 0
-        // Determine max force from motor max voltage
-        // If force demand from any motor is too high, incrementally decrease demanded torque until no motor torque demand is too high
-    }
-
-    void getState(enviornment env, quadState & state) // Later need to make these more generic, move computation to derived classes that this holds
+    void getVoltages(Eigen::Vector4d & motorVoltages, const Eigen::Vector3d & NDemand, const double FDemand) override;
+    
+    void getState(const enviornment & env, const quadState & state) // Later need to make these more generic, move computation to derived classes that this holds
     {
         estPtr_->estStateMemory = state.stateAsVec();
     }

@@ -8,7 +8,10 @@
 #include "poseModules.h"
 #include "quadParams.h"
 #include "quadState.h"
-// Implemented as header only classes
+
+
+// Forward declares
+struct enviornment;
 
 
 // Incorporate types of sensors as enumerated "modes"? - for testing starting with an omnicient sensor
@@ -49,7 +52,7 @@ class sensorTemplate : poseTemplate
         sensorTemplate(): est(estMemory.data()){}
         
         // default sensor is omnicient
-        void getMeas(quadState * qState, const enviornment env) // CHANGE THIS, MAKE GETTERS CONST THEN MAKE qState TAKE CONST
+        void getMeas(const quadState * qState, const enviornment & env)
         {
             est.pos(qState->pos());
             est.vel(qState->vel());

@@ -35,14 +35,17 @@ trajCtrlPacket PDTrajectoryController::response(
                                     // const Eigen::Vector3d & xDot, 
                                     const Eigen::Vector3d & xDes, 
                                     // const Eigen::Matrix3d & RBI,
-                                    const Eigen::Vector3d & xDotDes = Eigen::Vector3d::Zero(),                                       
-                                    const Eigen::Vector3d & xDotDotDes = Eigen::Vector3d::Zero()
+                                    const Eigen::Vector3d & xDotDes,                                       
+                                    const Eigen::Vector3d & xDotDotDes
                                     )
 {
     // Control gains + Feed forward desired accel, gravity, normalize to extract the portion || to zRBI
     FDesVector_ = (kp_*(state.pos()-xDes) + kd_*(state.vel()-xDotDes) - Eigen::Vector3d(0,0,params.g() * params.m()));
     ZDesVector_ = FDesVector_.normalized();
     FDes_= FDesVector_.transpose() * state.RBI().transpose() * normalizeFDesZ;
+    response_.ZDesVector = ZDesVector_;
+    response_.FDes = FDes_;
+    return response_;
 }
 
 
@@ -74,7 +77,7 @@ const Eigen::Vector3d & PDAttitudeController::response(
 
 
         
-
+naiveEstimator::naiveEstimator(std::shared_ptr<quadParams> paramsPtr): IMUPtr(paramsPtr->sensors()[0]), stateEstimatorTemplate(paramsPtr){}
 
 void naievePDController::updateVCBaseMat(const quadParams & params)
 {
