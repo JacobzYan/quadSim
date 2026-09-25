@@ -88,7 +88,7 @@ class quad : public ode::OdeDoPri54
         {
             Eigen::Vector4d output = Eigen::Vector4d::Zero();
             controllerDemands demands = params_.controller()->getDemands(stateEstimate, trajectory);
-            params_.controller()->getVoltages(& output, demands.NB, demands.F);
+            params_.controller()->getVoltages(output, demands.NB, demands.F);
 
             return output;
         }

@@ -227,7 +227,17 @@ naievePDController naievePDController::strLineConstructor(const std::string & li
     return naievePDController(name, std::make_shared<PDTrajectoryController>(trajCon),std::make_shared<PDAttitudeController>(attCon), std::make_shared<naiveEstimator>(Estimator));
 }
 
-
+std::shared_ptr<naievePDController> strLineConstructorPtr(const std::string & line, const quadParams params)
+{
+    naievePDController tempController = naievePDController::strLineConstructor( line, params);
+    return std::make_shared<naievePDController>
+    (
+        tempController.name(),
+        std::static_pointer_cast<PDTrajectoryController>(tempController.trajCtrlPtr()),
+        std::static_pointer_cast<PDAttitudeController>(tempController.attCtrlPtr()),
+        std::static_pointer_cast<naiveEstimator>(tempController.estPtr())
+    );
+}
 
 
 

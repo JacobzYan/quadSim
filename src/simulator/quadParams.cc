@@ -160,7 +160,7 @@ bool quadParams::readFile(std::string path)
                 case naievePDControllerType:
                         setController
                         (
-                            std::static_pointer_cast<quadControllerTemplate>(std::make_shared<naievePDControllerType>(naievePDController::strLineConstructor(varValue, * this))),
+                            naievePDController::strLineConstructor(varValue, * this),
                             naievePDControllerType
                         );
                     break;

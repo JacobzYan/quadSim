@@ -332,6 +332,13 @@ class quadControllerTemplate
             attCtrlPtr_(attCon),
             estPtr_(estCon){}
 
+
+
+        //  == Getters and setters ==
+        const std::shared_ptr<const trajectoryControllerTemplate> trajCtrlPtr() const {return trajCtrlPtr_;}
+        const std::shared_ptr<const attitudeControllerTemplate> attCtrlPtr() const {return attCtrlPtr_;}
+        const std::shared_ptr<const stateEstimatorTemplate> estPtr() const {return estPtr_;}
+
         //  == Virtual Member Functions == 
         virtual controllerDemands getDemands(quadState state, trajectory traj);
         virtual void getVoltages(Eigen::Vector4d & motorVoltages, const Eigen::Vector3d & NDemand, const double FDemand);
@@ -405,6 +412,7 @@ class naievePDController : public quadControllerTemplate // Transistion to havin
                                         );
 
     static naievePDController strLineConstructor(const std::string & line, const quadParams params);
+    static std::shared_ptr<naievePDController> strLineConstructorPtr(const std::string & line, const quadParams params);
     // static naievePDController strLineConstructor(const std::string & line, const quadParams params)
     // {
     //     // Temp helper variables
