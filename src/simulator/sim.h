@@ -65,7 +65,9 @@ class quad : public ode::OdeDoPri54
             state_(sol_)
         {
             state_=state0;
-            set_sol(state_.stateAsVec().data());
+            double x0[quadState::nStates];
+            std::copy(state0.stateAsVec().data(), state0.stateAsVec().data() + quadState::nStates, x0);
+            set_sol(x0);
             updateParams();
         } // Constructor with given initial pose
 
@@ -87,7 +89,13 @@ class quad : public ode::OdeDoPri54
             
         {
             Eigen::Vector4d output = Eigen::Vector4d::Zero();
-            controllerDemands demands = params_.controller()->getDemands(stateEstimate, trajectory);
+
+            controllerDemands demands;
+            if(params_.controllerType() == naievePDControllerType)
+            {
+                std::static_pointer_cast<naievePDController>(params_.controller())->getDemands(stateEstimate, trajectory);
+                // demands =  params_.controller()->getDemands(stateEstimate, trajectory);
+            }
             params_.controller()->getVoltages(output, demands.NB, demands.F);
 
             return output;

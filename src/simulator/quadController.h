@@ -85,7 +85,7 @@ class trajectoryControllerTemplate // Base class for traj controllers
             const Eigen::Vector3d & xDes, 
             const Eigen::Vector3d & xDotDes = Eigen::Vector3d::Zero(),                                       
             const Eigen::Vector3d & xDotDotDes = Eigen::Vector3d::Zero()
-            );
+            )=0;
 };
 
 class PDTrajectoryController : public trajectoryControllerTemplate
@@ -169,7 +169,7 @@ class attitudeControllerTemplate
                                         const quadState & state,
                                         const trajCtrlPacket & trajCtrlOutput, 
                                         const Eigen::Vector3d & yawDes
-                                        );
+                                        )=0;
 };
 
 class PDAttitudeController : public attitudeControllerTemplate
@@ -243,10 +243,9 @@ class stateEstimatorTemplate
         {
             
         }
-
         // Estimate the state given the sensors and their respective readings - possibly make this just pull from quadParams?
-        virtual quadState::stateVector estState (const std::vector<sensorTemplate*> measSensorPointers, std::vector<std::vector<double>> sensorReadings);
-        virtual quadState::stateVector estState(); // PLACEHOLDER FOR NAIEVE ESTIMATOR
+        virtual quadState::stateVector estState (const std::vector<sensorTemplate*> measSensorPointers, std::vector<std::vector<double>> sensorReadings)=0;
+        virtual quadState::stateVector estState()=0; // PLACEHOLDER FOR NAIEVE ESTIMATOR
 };
 
 class ukfEstimator : public stateEstimatorTemplate
@@ -341,9 +340,9 @@ class quadControllerTemplate
 
         //  == Virtual Member Functions == 
         virtual controllerDemands getDemands(quadState state, trajectory traj);
-        virtual void getVoltages(Eigen::Vector4d & motorVoltages, const Eigen::Vector3d & NDemand, const double FDemand);
-        virtual void getState(enviornment env, quadState & state);
-        virtual void updateParams();
+        virtual void getVoltages(Eigen::Vector4d & motorVoltages, const Eigen::Vector3d & NDemand, const double FDemand)=0;
+        virtual void getState(enviornment env, quadState & state)=0;
+        virtual void updateParams()=0;
 };
 
 class naievePDController : public quadControllerTemplate // Transistion to having the whole controller be uninherited?
@@ -413,6 +412,7 @@ class naievePDController : public quadControllerTemplate // Transistion to havin
 
     static naievePDController strLineConstructor(const std::string & line, const quadParams params);
     static std::shared_ptr<naievePDController> strLineConstructorPtr(const std::string & line, const quadParams params);
+    
     // static naievePDController strLineConstructor(const std::string & line, const quadParams params)
     // {
     //     // Temp helper variables

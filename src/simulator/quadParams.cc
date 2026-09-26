@@ -141,6 +141,7 @@ bool quadParams::readFile(std::string path)
         else{cutWhitespace(varValue);}
 
         // Assign the appropriate value
+        ControllerType t = UnknownController; // Need to init outisde of the switch block
         switch(varIndex)
         {
             case 0: g(std::stod(varValue)); break;
@@ -154,7 +155,7 @@ bool quadParams::readFile(std::string path)
             case 8: name(varValue); break;
             case 9: addSensor(varValue); break;
             case 10: // controller
-                ControllerType t = readControllerType(varValue);
+                t = readControllerType(varValue);
                 switch (t)
                 {
                 case naievePDControllerType:
@@ -170,7 +171,7 @@ bool quadParams::readFile(std::string path)
                     break;
                 }
                 break;
-            default: std::cout << "Could not read line - variable name not recognized: " << line << std::endl;
+            default: std::cout << "Could not read line - variable name not recognized: " << line << std::endl; break;
         }
     }
     

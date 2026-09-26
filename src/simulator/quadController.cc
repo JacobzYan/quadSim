@@ -233,9 +233,9 @@ std::shared_ptr<naievePDController> strLineConstructorPtr(const std::string & li
     return std::make_shared<naievePDController>
     (
         tempController.name(),
-        std::static_pointer_cast<PDTrajectoryController>(tempController.trajCtrlPtr()),
-        std::static_pointer_cast<PDAttitudeController>(tempController.attCtrlPtr()),
-        std::static_pointer_cast<naiveEstimator>(tempController.estPtr())
+        std::static_pointer_cast<PDTrajectoryController>(std::const_pointer_cast<trajectoryControllerTemplate>(tempController.trajCtrlPtr())), // Need to cast pointer to static obect from getter to be editable again
+        std::static_pointer_cast<PDAttitudeController>(std::const_pointer_cast<attitudeControllerTemplate>(tempController.attCtrlPtr())),
+        std::static_pointer_cast<naiveEstimator>(std::const_pointer_cast<stateEstimatorTemplate>(tempController.estPtr()))
     );
 }
 
