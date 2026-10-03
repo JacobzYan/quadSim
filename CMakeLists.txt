@@ -12,13 +12,6 @@ set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Release>:Release>")
 project(QuadSim)
 
 
-
-
-
-
-
-
-
-
 # Handle complex info in source
 add_subdirectory(src)
+
