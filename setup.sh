@@ -17,6 +17,7 @@ else
 fi
 printf "\nEnvironment successfully created at $VENV_DIR\n"
 
+pip install -r quadSimPythonVenv/requirements.txt
 
 printf "\n----- SETTING UP BUILD ENVIORNMENT -----\n\n"
 mkdir build

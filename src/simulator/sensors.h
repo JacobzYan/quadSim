@@ -67,7 +67,7 @@ class sensorTemplate : poseTemplate
 
 
 
-class IMUSensor : sensorTemplate
+class IMUSensor : public sensorTemplate
 {
     private:
 

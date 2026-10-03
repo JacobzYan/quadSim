@@ -24,6 +24,8 @@ struct controllerDemands // For packaging att controller output
 {
     double F; // Total demanded force
     Eigen::Vector3d NB; // Demanded torque vector expressed in the body frame
+    controllerDemands(): F(0), NB(Eigen::Vector3d::Zero()){}
+    controllerDemands(const double Fin, const Eigen::Vector3d & NBin): F(Fin), NB(NBin){}
 };
 struct poseEstimate // Reduced state estimate
 {
@@ -290,9 +292,12 @@ class naiveEstimator : public stateEstimatorTemplate // WIP
 {
     private:
         const sensorTemplate * IMUPtr;
+        std::shared_ptr<quadParams> paramsPtr_;
 
     public:
         naiveEstimator(std::shared_ptr<quadParams> paramsPtr);
+        quadState::stateVector estState (const std::vector<sensorTemplate*> measSensorPointers, std::vector<std::vector<double>> sensorReadings) override;
+        quadState::stateVector estState() override; // PLACEHOLDER FOR NAIEVE ESTIMATOR
 
 };
 
@@ -340,9 +345,9 @@ class quadControllerTemplate
 
         //  == Virtual Member Functions == 
         virtual controllerDemands getDemands(quadState state, trajectory traj);
-        virtual void getVoltages(Eigen::Vector4d & motorVoltages, const Eigen::Vector3d & NDemand, const double FDemand)=0;
-        virtual void getState(enviornment env, quadState & state)=0;
-        virtual void updateParams()=0;
+        virtual void getVoltages(Eigen::Vector4d & motorVoltages, const Eigen::Vector3d & NDemand, const double FDemand){};
+        virtual void getState(enviornment & env, quadState & state){};
+        virtual void updateParams(){};
 };
 
 class naievePDController : public quadControllerTemplate // Transistion to having the whole controller be uninherited?
@@ -504,8 +509,12 @@ class naievePDController : public quadControllerTemplate // Transistion to havin
 
     // Assumes motors face up
     void getVoltages(Eigen::Vector4d & motorVoltages, const Eigen::Vector3d & NDemand, const double FDemand) override;
+
+    controllerDemands getDemands(quadState state, trajectory traj) override {return controllerDemands();}
+    // void getState(enviornment env, quadState & state) override;
+    void updateParams() override {}
     
-    void getState(const enviornment & env, const quadState & state) // Later need to make these more generic, move computation to derived classes that this holds
+    void getState(enviornment & env, quadState & state) override  // Later need to make these more generic, move computation to derived classes that this holds
     {
         estPtr_->estStateMemory = state.stateAsVec();
     }
